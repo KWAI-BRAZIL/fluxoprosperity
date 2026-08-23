@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Desbloqueio de Abundância — Mobile</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #120C1C;
+    --panel: #1C1430;
+    --card: #251A3D;
+    --card2: #2E2149;
+    --gold: #D9A441;
+    --gold-soft: #F1D89A;
+    --cream: #F7F1E6;
+    --muted: #A79BC2;
+    --line: rgba(217,164,65,0.20);
+    --green: #7FAE7A;
+    --green-bg: rgba(127,174,122,0.14);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    font-family:'Inter', sans-serif;
+    padding: 40px 16px;
+    color: var(--cream);
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size: 22px;
+    text-align:center;
+    margin: 0 0 4px;
+    color: var(--gold-soft);
+  }
+  .sub{
+    text-align:center;
+    color: var(--muted);
+    font-size: 12px;
+    margin: 0 0 32px;
+  }
+  .row{
+    display:flex;
+    gap: 20px;
+    overflow-x:auto;
+    padding: 8px 4px 24px;
+  }
+  .device{
+    flex: 0 0 300px;
+  }
+  .label{
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    text-align:center;
+    margin-bottom: 8px;
+  }
+  .frame{
+    background: #0A0712;
+    border-radius: 34px;
+    padding: 10px;
+    border: 1px solid var(--line);
+  }
+  .notch{
+    width: 70px; height: 16px;
+    background: #0A0712;
+    border-radius: 0 0 12px 12px;
+    margin: 0 auto 6px;
+    position: relative;
+    z-index: 2;
+  }
+  .screen{
+    background: linear-gradient(180deg, var(--card), #180F2A);
+    border-radius: 24px;
+    min-height: 500px;
+    padding: 18px 15px;
+    display:flex;
+    flex-direction:column;
+    overflow: hidden;
+  }
+  .icon-circle{
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-size: 19px;
+    margin-bottom: 14px;
+    color: #241704;
+  }
+  h2{
+    font-family:'Fraunces', serif;
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    color: var(--cream);
+  }
+  h3{
+    font-family:'Fraunces', serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--gold-soft);
+  }
+  p.desc{
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 0 14px;
+  }
+  input[type=text]{
+    width:100%;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--cream);
+    font-size: 12.5px;
+    margin-bottom: 10px;
+  }
+  input::placeholder{ color: var(--muted); }
+  .btn{
+    width:100%;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family:'Inter', sans-serif;
+    cursor: pointer;
+    letter-spacing: 0.01em;
+  }
+  .btn-gold{
+    background: linear-gradient(180deg, var(--gold-soft), var(--gold));
+    color: #241704;
+  }
+  .btn-ghost{
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold-soft);
+  }
+  .btn-green{
+    background: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+  }
+  .mt-auto{ margin-top:auto; }
+  .center{ text-align:center; align-items:center; }
+  .num-badge{
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, var(--gold-soft), var(--gold));
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif;
+    font-size: 22px;
+    font-weight:600;
+    color:#241704;
+    margin: 2px auto 12px;
+  }
+  .card-inner{
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 12px;
+    margin-bottom: 9px;
+  }
+  .card-inner .k{
+    font-size: 9.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin: 0 0 3px;
+  }
+  .card-inner .v{
+    font-family:'Fraunces', serif;
+    font-size: 16px;
+    color: var(--gold-soft);
+    margin:0;
+  }
+  .topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom: 12px;
+  }
+  .streak{
+    font-size: 10px;
+    background: rgba(217,164,65,0.15);
+    color: var(--gold-soft);
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+  }
+  .push{
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    display:flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .push .dot{
+    width: 30px; height:30px;
+    border-radius: 50%;
+    background: var(--gold);
+    flex: 0 0 30px;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 14px;
+    color:#241704;
+  }
+  .push h4{
+    font-size: 11.5px;
+    margin: 0 0 3px;
+    color: var(--cream);
+    font-weight:600;
+  }
+  .push p{
+    font-size: 10.5px;
+    color: var(--muted);
+    margin:0;
+    line-height:1.4;
+  }
+  .price{
+    font-family:'Fraunces', serif;
+    font-size: 24px;
+    color: var(--gold-soft);
+    margin: 2px 0 12px;
+  }
+  .tag{
+    display:inline-block;
+    font-size: 9.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-right: 5px;
+    margin-bottom: 8px;
+  }
+  .tag-good{ background: var(--green-bg); color: var(--green); }
+  .tag-gold{ background: rgba(217,164,65,0.15); color: var(--gold-soft); }
+  .job-card{
+    background: rgba(0,0,0,0.22);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 11px 12px;
+    margin-bottom: 9px;
+  }
+  .job-card h4{
+    font-size: 12px;
+    margin: 0 0 3px;
+    color: var(--cream);
+    font-weight: 600;
+  }
+  .job-card p{
+    font-size: 10.5px;
+    color: var(--muted);
+    margin: 0 0 6px;
+  }
+  .job-card .apply{
+    font-size: 10px;
+    color: var(--gold-soft);
+  }
+  .divider{
+    border-top: 1px solid var(--line);
+    margin: 10px 0;
+  }
+  .care-box{
+    background: var(--green-bg);
+    border: 1px solid rgba(127,174,122,0.35);
+    border-radius: 12px;
+    padding: 11px 12px;
+    margin-bottom: 9px;
+  }
+  .care-box h4{
+    font-size: 11.5px;
+    color: var(--green);
+    margin: 0 0 3px;
+    font-weight: 600;
+  }
+  .care-box p{
+    font-size: 10.5px;
+    color: var(--cream);
+    opacity: 0.85;
+    margin:0;
+    line-height:1.5;
+  }
+  .section-note{
+    max-width: 300px;
+    margin: 0 auto 6px;
+    font-size: 10.5px;
+    color: var(--muted);
+    text-align:center;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<h1>Desbloqueio de Abundância</h1>
+<p class="sub">fluxo completo — versão mobile</p>
+
+<!-- SEÇÃO 1: ONBOARDING PROFUNDO -->
+<p class="section-note">1. Onboarding — nome + nascimento capturam dado real (usável em CRM/CAPI) e criam efeito de personalização imediata</p>
+<div class="row">
+
+  <div class="device">
+    <div class="label">Nome completo</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <div class="icon-circle">✦</div>
+        <h2>Qual seu nome completo?</h2>
+        <p class="desc">Cada letra carrega uma vibração. Vamos revelar o significado do seu nome.</p>
+        <input type="text" placeholder="Nome completo">
+        <button class="btn btn-gold mt-auto">Continuar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Data de nascimento</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <div class="icon-circle">✦</div>
+        <h2>E sua data de nascimento?</h2>
+        <p class="desc">Com ela calculamos seu número de destino e seu ciclo pessoal atual.</p>
+        <input type="text" placeholder="dd/mm/aaaa">
+        <button class="btn btn-gold mt-auto">Calcular meu número</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Significado do nome</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <span class="tag tag-gold">Numerologia do nome</span>
+        <h2>Ana, seu nome vibra em 3</h2>
+        <p class="desc">Pessoas com essa vibração atraem oportunidades através da comunicação — mas costumam se subestimar na hora de cobrar o que merecem.</p>
+        <div class="card-inner">
+          <p class="k">Ponto forte</p>
+          <p class="v" style="font-size:13px;font-family:'Inter',sans-serif;color:var(--cream)">Carisma natural</p>
+        </div>
+        <div class="card-inner">
+          <p class="k">Bloqueio comum</p>
+          <p class="v" style="font-size:13px;font-family:'Inter',sans-serif;color:var(--cream)">Medo de se expor</p>
+        </div>
+        <button class="btn btn-gold mt-auto">Ver meu número de destino</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Número de destino</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen center">
+        <div class="num-badge">7</div>
+        <h2>Seu número de destino é 7</h2>
+        <p class="desc">Você tende a segurar o dinheiro por medo do futuro. Seu ciclo atual pede coragem para receber, não só para poupar.</p>
+        <button class="btn btn-gold mt-auto">Começar minha jornada</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SEÇÃO 2: HOME + RITUAL + TAROT -->
+<p class="section-note">2. Home diária — combina previsão do dia, tarot e ritual. O "dia bom para" mira em decisões reais (trabalho, dinheiro, conversas), nunca em apostar</p>
+<div class="row">
+
+  <div class="device">
+    <div class="label">Home diária</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <div class="topbar">
+          <span style="font-size:11.5px;color:var(--muted)">Olá, Ana</span>
+          <span class="streak">🔥 9 dias seguidos</span>
+        </div>
+        <span class="tag tag-good">Hoje é bom para</span>
+        <div class="card-inner">
+          <p class="k">Favorece hoje</p>
+          <p class="v" style="font-size:13px;font-family:'Inter',sans-serif;color:var(--cream)">Propostas de trabalho e conversas sobre dinheiro</p>
+        </div>
+        <div class="card-inner">
+          <p class="k">Número da sorte</p>
+          <p class="v">23</p>
+        </div>
+        <div class="card-inner">
+          <p class="k">Carta do dia</p>
+          <p class="v" style="font-size:13px;font-family:'Inter',sans-serif;color:var(--cream)">A Estrela — esperança renovada</p>
+        </div>
+        <button class="btn btn-gold mt-auto">Fazer ritual de hoje</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Ritual — passo a passo</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <h2>Ritual da Estrela</h2>
+        <p class="desc">3 passos, 5 minutos</p>
+        <div class="card-inner">
+          <p class="k">Passo 1</p>
+          <p class="v" style="font-size:12.5px;font-family:'Inter',sans-serif;color:var(--cream)">Acenda uma vela branca ou amarela</p>
+        </div>
+        <div class="card-inner">
+          <p class="k">Passo 2</p>
+          <p class="v" style="font-size:12.5px;font-family:'Inter',sans-serif;color:var(--cream)">Escreva 1 frase: "Eu mereço receber"</p>
+        </div>
+        <div class="card-inner">
+          <p class="k">Passo 3</p>
+          <p class="v" style="font-size:12.5px;font-family:'Inter',sans-serif;color:var(--cream)">Releia em voz alta 3 vezes</p>
+        </div>
+        <button class="btn btn-gold mt-auto">Concluir ritual</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Tarot do dia</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen center">
+        <div class="icon-circle">☾</div>
+        <h2>A Estrela</h2>
+        <p class="desc">Depois de um período difícil, uma porta se abre. É dia de acreditar em algo novo — inclusive em você mesma.</p>
+        <button class="btn btn-ghost mt-auto">Ver leitura completa</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SEÇÃO 3: NOTIFICAÇÕES -->
+<p class="section-note">3. Notificações — recriam o "puxão" de retorno do slot, mas o gancho é sincronicidade/energia, não prêmio</p>
+<div class="row">
+
+  <div class="device">
+    <div class="label">Push — retorno diário</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen" style="justify-content:center;">
+        <div class="push">
+          <div class="dot">☾</div>
+          <div>
+            <h4>Portal de abundância aberto</h4>
+            <p>São 22:22. O universo está te chamando, Ana.</p>
+          </div>
+        </div>
+        <div class="push">
+          <div class="dot">✦</div>
+          <div>
+            <h4>Sua carta do dia chegou</h4>
+            <p>A Estrela está esperando por você.</p>
+          </div>
+        </div>
+        <div class="push">
+          <div class="dot">🔥</div>
+          <div>
+            <h4>Não quebre sua sequência</h4>
+            <p>9 dias de ritual. Faltam poucos minutos para o dia virar.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 4: OPORTUNIDADES / VAGAS -->
+  <div class="device">
+    <div class="label">Oportunidades do dia</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <span class="tag tag-good">Manifestando abundância real</span>
+        <h2>Vagas alinhadas ao seu momento</h2>
+        <div class="job-card">
+          <h4>Atendente — loja de shopping</h4>
+          <p>Caldas Novas, GO · CLT</p>
+          <span class="apply">Candidatar-se →</span>
+        </div>
+        <div class="job-card">
+          <h4>Auxiliar administrativo</h4>
+          <p>Home office · Meio período</p>
+          <span class="apply">Candidatar-se →</span>
+        </div>
+        <div class="job-card">
+          <h4>Vendedor(a) — comissionado</h4>
+          <p>Presencial · Início imediato</p>
+          <span class="apply">Candidatar-se →</span>
+        </div>
+        <button class="btn btn-ghost mt-auto">Ver todas as vagas</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEÇÃO 5: CUIDADO / ANTI-VÍCIO -->
+  <div class="device">
+    <div class="label">Cuidando de mim</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen">
+        <h2>Cuidando de mim</h2>
+        <p class="desc">Espaço para quem quer reconstruir a relação com dinheiro e impulso.</p>
+        <div class="care-box">
+          <h4>Antes de gastar por impulso</h4>
+          <p>Espere 10 minutos e beba um copo de água antes de decidir.</p>
+        </div>
+        <div class="care-box">
+          <h4>Sinta a vontade, não aja nela</h4>
+          <p>Anote o que você está sentindo agora, sem julgamento.</p>
+        </div>
+        <div class="care-box">
+          <h4>Você não precisa passar por isso sozinha</h4>
+          <p>Jogadores Anônimos Brasil e CVV (188) oferecem apoio gratuito e sigiloso.</p>
+        </div>
+        <button class="btn btn-green mt-auto">Falar com alguém agora</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SEÇÃO 6: UPSELL -->
+<p class="section-note">6. Upsell — oferta paga chega só depois de valor gratuito ser entregue, reduzindo sensação de venda forçada</p>
+<div class="row">
+
+  <div class="device">
+    <div class="label">Upsell — leitura paga</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen center">
+        <div class="icon-circle">♛</div>
+        <h2>Leitura completa do seu código</h2>
+        <p class="desc">Mapa astral + numerologia com especialista, revelando seus próximos 90 dias.</p>
+        <div class="price">R$97</div>
+        <button class="btn btn-ghost mt-auto">Quero minha leitura</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="device">
+    <div class="label">Assinatura mensal</div>
+    <div class="frame"><div class="notch"></div>
+      <div class="screen center">
+        <div class="icon-circle">✦</div>
+        <h2>Acesso ilimitado</h2>
+        <p class="desc">Rituais exclusivos, previsões semanais e leitura de tarot completa todos os dias.</p>
+        <div class="price">R$27<span style="font-size:13px;color:var(--muted)">/mês</span></div>
+        <button class="btn btn-gold mt-auto">Assinar agora</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

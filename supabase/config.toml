@@ -1,0 +1,14 @@
+# Edge Functions: Cakto e gerar-eco não enviam JWT de usuário.
+project_id = "ruirfbndsnzaqaezidfr"
+
+[functions.cakto-webhook]
+verify_jwt = false
+
+[functions.gerar-eco]
+verify_jwt = false
+
+[functions.gerar-sintese]
+verify_jwt = false
+
+[functions.gerar-leitura]
+verify_jwt = false
