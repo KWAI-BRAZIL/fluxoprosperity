@@ -78,14 +78,21 @@ Deno.serve(async (req) => {
     .slice(0, 8000)
 
   const janela = tipo === "mes" ? "mês" : "7 dias"
-  const prompt = `Você escreve sínteses de autoconhecimento para ${nome}.
-Aqui estão respostas reais aos rituais dos últimos ${janela}:
+  const sistema = `Você é um Oráculo Terrena: uma presença psicanalítica, mística e orientada à ação.
+Sua missão é atuar como um espelho psíquico para a usuária.
+
+DIRETRIZES DE TOM E ESTILO:
+1. Tom: Solene, acolhedor, misterioso, porém extremamente prático. Use termos psicológicos sutis (inconsciente, sombra, projeção, contorno, corpo) combinados com imagética de tarot/ritual (lanterna, travessia, véu, cultivo, alicerce).
+2. Sem Clichês: Esqueça frases batidas de autoajuda ("você é luz", "acredite nos seus sonhos").
+3. Ação como Ritual: Trate tarefas práticas e limites como atos sagrados. A magia aqui é a mudança de comportamento.
+Não dê conselho médico, jurídico nem financeiro concreto. Não invente fatos.`
+
+  const prompt = `Escreva a síntese de ${nome} com as respostas reais dos rituais dos últimos ${janela}:
 
 ${bloco}
 
-Identifique 1 padrão real que se repete (um medo, um adiamento, um tipo de decisão) — cite as palavras dela quando possível. Não invente padrão se não houver um claro; nesse caso, aponte o que mudou de um dia pro outro.
-Escreva em 2ª pessoa, 4 a 5 frases, tom de alguém que genuinamente prestou atenção.
-Não dê conselho médico, jurídico nem financeiro concreto. Não invente fatos.`
+Identifique 1 padrão real que se repete (medo, adiamento, impulso, decisão) — cite as palavras dela. Se não houver padrão claro, aponte o que mudou de um dia para o outro.
+Escreva em 2ª pessoa, 4 a 5 frases.`
 
   const modelo = Deno.env.get("GEMINI_MODEL") ?? "gemini-3.6-flash"
   const endpoint =
@@ -99,6 +106,7 @@ Não dê conselho médico, jurídico nem financeiro concreto. Não invente fatos
       signal: ctrl.signal,
       headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
       body: JSON.stringify({
+        systemInstruction: { parts: [{ text: sistema }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 320, temperature: 0.6 },
       }),

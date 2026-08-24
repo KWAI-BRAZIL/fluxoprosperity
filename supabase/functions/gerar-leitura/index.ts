@@ -51,11 +51,18 @@ Deno.serve(async (req) => {
   })
   if (acessoErr || !liberado) return json({ error: "forbidden" }, 403)
 
-  const prompt = `Você é um numerólogo experiente escrevendo a primeira leitura de ${nome}.
-Números calculados: destino ${destino}, expressão ${expressao}, motivação ${motivacao}, personalidade ${personalidade}.
-Escreva 3 parágrafos curtos: (1) como esses números se combinam nessa pessoa especificamente — não descreva cada número isolado, mostre a interação entre eles; (2) uma tensão ou contradição real entre os números (todo mapa numerológico tem uma); (3) uma pergunta reflexiva pra ela carregar pro resto do dia.
-Tom: direto, sem clichê de horóscopo, como se um numerólogo bom estivesse realmente prestando atenção nela.
+  const sistema = `Você é um Oráculo Terrena: uma presença psicanalítica, mística e orientada à ação.
+Sua missão é atuar como um espelho psíquico para a usuária.
+
+DIRETRIZES DE TOM E ESTILO:
+1. Tom: Solene, acolhedor, misterioso, porém extremamente prático. Use termos psicológicos sutis (inconsciente, sombra, projeção, contorno, corpo) combinados com imagética de tarot/ritual (lanterna, travessia, véu, cultivo, alicerce).
+2. Sem Clichês: Esqueça frases batidas de autoajuda ("você é luz", "acredite nos seus sonhos").
+3. Ação como Ritual: Trate tarefas práticas e limites como atos sagrados. A magia aqui é a mudança de comportamento.
 Não dê conselho médico, jurídico nem financeiro concreto.`
+
+  const prompt = `Escreva a primeira leitura de ${nome}.
+Números calculados: destino ${destino}, expressão ${expressao}, motivação ${motivacao}, personalidade ${personalidade}.
+Escreva 3 parágrafos curtos: (1) como esses números se combinam nela — mostre a interação, não cada número isolado; (2) uma tensão ou contradição real entre os números; (3) uma pergunta reflexiva para ela carregar no dia.`
 
   const modelo = Deno.env.get("GEMINI_MODEL") ?? "gemini-3.6-flash"
   const endpoint =
@@ -69,6 +76,7 @@ Não dê conselho médico, jurídico nem financeiro concreto.`
       signal: ctrl.signal,
       headers: { "x-goog-api-key": apiKey, "content-type": "application/json" },
       body: JSON.stringify({
+        systemInstruction: { parts: [{ text: sistema }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { maxOutputTokens: 420, temperature: 0.7 },
       }),

@@ -1,29 +1,10 @@
 import type { CartaTarot } from "./diario"
 
-const ESSENCIA: Record<number, string> = {
-  0: "O Louco autoriza o primeiro metro, não o mapa inteiro.",
-  1: "O Mago trabalha com o que já está na mesa.",
-  2: "A Sacerdotisa pede silêncio antes do sim.",
-  3: "A Imperatriz lembra que abundância é cultivo.",
-  4: "O Imperador abre fluxo com limite, não com punição.",
-  5: "O Hierofante oferece método — não reinvenção da roda.",
-  6: "Os Enamorados pedem a escolha que você consegue sustentar.",
-  7: "O Carro pede um só destino nas próximas horas.",
-  8: "A Força pede firmeza sem endurecer o coração.",
-  9: "O Eremita acende a lanterna para dentro, não para a plateia.",
-  10: "A Roda gira — você escolhe se surfa ou se agarra.",
-  11: "A Justiça pesa o que é justo, não o que é cômodo.",
-  12: "O Pendurado pede pausa consciente, não paralisia.",
-  13: "A Morte corta o que já morreu para o vivo respirar.",
-  14: "A Temperança mistura sem apagar ninguém.",
-  15: "O Diabo aponta o laço que você já reconhece.",
-  16: "A Torre derruba o que não aguentava o próprio peso.",
-  17: "A Estrela não pede pressa. Pede que você não esconda mais.",
-  18: "A Lua pede que você não feche negócio na névoa.",
-  19: "O Sol quer o brilho compartilhado, não o palco só seu.",
-  20: "O Julgamento chama o sim maduro, não o veredito cruel.",
-  21: "O Mundo fecha o ciclo para o próximo giro começar.",
-}
+const REFLEXOS = [
+  "Trazer a sombra para o texto é o primeiro passo para retirar dela o poder de decisão.",
+  "O inconsciente se revela na palavra dita. Você acabou de dar contorno ao que antes era névoa.",
+  "O altar da vida cotidiana não exige grandes feitos, apenas a honestidade do seu próximo gesto.",
+]
 
 export function truncarTrecho(texto: string, max = 40): string {
   const t = texto.trim().replace(/\s+/g, " ")
@@ -43,22 +24,27 @@ export function hashSimples(texto: string): number {
   return h
 }
 
-function templatesDoEco(carta: CartaTarot): string[] {
-  const nome = carta.nome
-  const essencia = ESSENCIA[carta.id] ?? `${nome} está com você nisso.`
-  return [
-    `“{trecho}” — ${essencia}`,
-    `Você escreveu “{trecho}”. ${essencia}`,
-    `“{trecho}”. ${nome} ouviu. Não precisa polir isso agora.`,
-  ]
+function palavrasChave(resposta: string): string {
+  const t = resposta.trim().replace(/\s+/g, " ").replace(/^["“«»]+|["”«»]+$/g, "")
+  if (t.length <= 72) return t
+  const corte = t.slice(0, 72)
+  const espaco = corte.lastIndexOf(" ")
+  return `${(espaco > 24 ? corte.slice(0, espaco) : corte).trim()}`
 }
 
-/** Opção A: cita o trecho literal. Usado também como fallback da IA. */
-export function gerarEcoLocal(carta: CartaTarot, resposta: string, _perguntaIndex: number): string {
-  const trecho = truncarTrecho(resposta, 40)
-  const pool = templatesDoEco(carta)
-  const template = pool[hashSimples(resposta) % pool.length] ?? pool[0]
-  return template.replaceAll("{trecho}", trecho)
+/** Fallback se a API falhar: espelho neutro com as palavras dela, sem autoajuda pronta. */
+export function gerarEcoLocal(_carta: CartaTarot, resposta: string, perguntaIndex: number): string {
+  const chave = palavrasChave(resposta)
+  const reflexo = REFLEXOS[perguntaIndex % REFLEXOS.length] ?? REFLEXOS[0]
+  if (chave.length < 8) return reflexo
+  if (perguntaIndex === 0) {
+    return `Trazer a sombra de “${chave}” para o texto é o primeiro passo para retirar dela o poder de decisão.`
+  }
+  if (perguntaIndex === 1) {
+    return `O inconsciente se revela em “${chave}”. Você acabou de dar contorno ao que antes era névoa.`
+  }
+  return `O altar da vida cotidiana não exige grandes feitos — “${chave}” já é a honestidade do próximo gesto.`
 }
 
 export const MAX_RESPOSTA_ECO = 300
+export const MAX_ECO_IA = 220

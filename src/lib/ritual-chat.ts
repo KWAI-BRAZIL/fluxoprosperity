@@ -15,23 +15,23 @@ export type RitualChat = {
 }
 
 const ABERTURA_ESPECIAL: Record<number, string> = {
-  15: "O Diabo aponta pro laço que você já reconhece — não pra te culpar, pra te mostrar que dá pra soltar.",
+  15: "O laço que te prende hoje não é feito de correntes, mas de hábitos sutis. Olhar para ele sem julgar é a chave da soltura.",
   17: "A Estrela pousa sobre você hoje. Depois de um período difícil, uma porta se abre — mas só quem para pra ouvir consegue atravessar.",
 }
 
 const CHAT: Record<number, RitualBase> = {
   0: {
     perguntas: [
-      "O que você anda adiando porque ainda não se sente 100% pronta?",
-      "Qual é o menor passo possível nisso — algo de 10 minutos, hoje?",
-      "Como você pode reconhecer esse primeiro movimento, mesmo pequeno?",
+      "O que você adia por medo de não fazer perfeito?",
+      "Qual é o movimento mínimo de 10 minutos que você pode fazer hoje?",
+      "Como você honra esse gesto hoje, sem esperar o chão perfeito?",
     ],
     ecos: [
-      "Adiar não te define. Vamos achar um começo que caiba no dia.",
-      "Isso já é um passo real, não um plano na gaveta.",
+      "A busca pela perfeição é só a sombra do medo vestida de prudência.",
+      "Um gesto simples no plano físico tem mais força oracular do que dez anos de intenção na mente.",
     ],
     conselho:
-      "O Louco não pede coragem de cinema. Pede um sim pequeno. Você não precisa do mapa inteiro — só do próximo metro. Comece sem se humilhar por ainda estar no começo.",
+      "O Louco não espera o chão; ele constrói o passo ao pisar.",
   },
   1: {
     perguntas: [
@@ -217,16 +217,16 @@ const CHAT: Record<number, RitualBase> = {
   },
   15: {
     perguntas: [
-      "Qual impulso puxa mais forte hoje: gastar, prometer, ou repetir algo que você sabe que te machuca?",
-      "Complete: “quero isso para não sentir…”",
+      "Qual impulso automático você sente vontade de repetir hoje para não encarar o desconforto?",
+      "Escreva: “Eu busco essa ilusão para não sentir…”",
       "Se o laço apertar, a quem ou aonde você pede ajuda (CVV 188, alguém de confiança)?",
     ],
     ecos: [
-      "Ver o laço já é metade da libertação. Sem vergonha de ser humana.",
-      "Nomear o sentimento por trás do gasto quebra o automático.",
+      "A anestesia do hábito é o altar onde sacrificamos a presença para não sentir o peso.",
+      "Quando você dá nome à angústia, o contrato invisível com o impulso perde a força.",
     ],
     conselho:
-      "O Diabo, aqui, não é condenação: é lanterna no impulso. Espere 10 minutos, beba água, não decida no pico. Se pesar, Cuidando de mim está no menu — CVV 188 e Jogadores Anônimos existem para isso. Você não precisa passar sozinha por um laço que aperta.",
+      "Beba um copo d'água, pouse os pés no chão e aguarde 10 minutos antes de ceder à esquiva. Se o aperto for maior que a sua estrutura, ligue 188. O ritual de hoje é sustentar a sua presença.",
   },
   16: {
     perguntas: [
@@ -350,6 +350,8 @@ export function conselhoDoRitual(
 ): string {
   const chat = ritualDaCarta(carta)
   const nome = primeiroNome(nomeCompleto ?? "") || "você"
-  const [a, b, c] = [0, 1, 2].map((i) => trechoResposta(respostas[i] ?? "", 70))
-  return `${chat.conselho}\n\n${nome}, nesta conversa você trouxe: “${a}”. Depois: “${b}”. E fechou com: “${c}”. Não precisa resolver a vida inteira agora. Honra o que você acabou de nomear — esse já é o ritual.`
+  const a = trechoResposta(respostas[0] ?? "", 90)
+  const b = trechoResposta(respostas[1] ?? "", 90)
+  const c = trechoResposta(respostas[2] ?? "", 90)
+  return `${nome}, você reconheceu “${a}” e escolheu “${b}”. Fechou com “${c}”. Honra o que você acabou de nomear — esse já é o ritual. ${chat.conselho}`
 }

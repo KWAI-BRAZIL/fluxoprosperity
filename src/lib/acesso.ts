@@ -2,6 +2,7 @@ import type { CartaTarot } from "./diario"
 import { arcanosMaiores, hojeISO, somarDiasISO } from "./diario"
 import { numeroDestino } from "./numerologia"
 import {
+  getEmailSessao,
   getEntradasLocal,
   getPerfilLocal,
   normalizarEmail,
@@ -43,6 +44,21 @@ function lerCartas(valor: unknown): CartaVivida[] {
   return saida
 }
 
+const EMAILS_GRIMORIO_COMPLETO = new Set([
+  "arcanodigital.com.br@gmail.com",
+  "arcandigital.com.br@gmail.com",
+])
+
+function baralhoCompleto(cartas: CartaVivida[], email?: string | null): CartaVivida[] {
+  const conta = normalizarEmail(email ?? getEmailSessao() ?? "")
+  if (!EMAILS_GRIMORIO_COMPLETO.has(conta)) return cartas
+  const hoje = hojeISO()
+  return mesclarCartas(
+    cartas,
+    arcanosMaiores().map((carta) => ({ id: carta.id, nome: carta.nome, em: hoje })),
+  )
+}
+
 export function mesclarCartas(a: CartaVivida[], b: CartaVivida[]): CartaVivida[] {
   const mapa = new Map<number, CartaVivida>()
   for (const carta of [...a, ...b]) {
@@ -73,14 +89,16 @@ function mapRow(row: Record<string, unknown>, fallback?: Partial<Perfil>): Perfi
     produto: (row.produto as string | null) ?? fallback?.produto ?? null,
     ritual_feito_hoje: Boolean(row.ritual_feito_hoje),
     rituais_em: datas,
-    cartas_vividas: mesclarCartas(lerCartas(row.cartas_vividas), fallback?.cartas_vividas ?? []),
+    cartas_vividas: baralhoCompleto(
+      mesclarCartas(lerCartas(row.cartas_vividas), fallback?.cartas_vividas ?? []),
+    ),
   }
 }
 
 function sobreporColecaoLocal(perfil: Perfil): Perfil {
   const local = getPerfilLocal()
   const recorde = Math.max(perfil.recorde_streak ?? 0, local.recorde_streak ?? 0, perfil.streak_dias ?? 0)
-  const cartas = mesclarCartas(perfil.cartas_vividas ?? [], local.cartas_vividas ?? [])
+  const cartas = baralhoCompleto(mesclarCartas(perfil.cartas_vividas ?? [], local.cartas_vividas ?? []))
   const unido: Perfil = {
     ...perfil,
     recorde_streak: recorde,
@@ -106,21 +124,6 @@ function perfilParaLocal(perfil: Perfil, atual: PerfilLocal): PerfilLocal {
     rituais_em: perfil.rituais_em,
     cartas_vividas: perfil.cartas_vividas,
   }
-}
-
-function revelarArcanosParaRevisao(email: string, perfil: Perfil): Perfil {
-  if (!normalizarEmail(email).includes("arcanodigital")) return perfil
-  const hoje = hojeISO()
-  const todas = arcanosMaiores().map((carta) => ({
-    id: carta.id,
-    nome: carta.nome,
-    em: hoje,
-  }))
-  const cartas = mesclarCartas(perfil.cartas_vividas, todas)
-  const unido = { ...perfil, cartas_vividas: cartas }
-  const local = getPerfilLocal()
-  setPerfilLocal({ ...local, ...perfilParaLocal(unido, local) })
-  return unido
 }
 
 export type StatusConta = "invalido" | "nao_pago" | "cadastrar" | "entrar"
@@ -200,7 +203,7 @@ export async function entrarConta(email: string, senha: string): Promise<void> {
 
 export async function obterPerfil(email: string): Promise<Perfil | null> {
   if (modoPreview()) {
-    return revelarArcanosParaRevisao(email, sincronizarRitualLocal(getPerfilLocal()))
+    return sincronizarRitualLocal(getPerfilLocal())
   }
   const { data, error } = await getSupabase().rpc("obter_perfil", {
     p_email: normalizarEmail(email),
@@ -209,8 +212,7 @@ export async function obterPerfil(email: string): Promise<Perfil | null> {
   if (!data) return null
   const row = Array.isArray(data) ? data[0] : data
   if (!row) return null
-  const perfil = sobreporColecaoLocal(mapRow(row as Record<string, unknown>))
-  return revelarArcanosParaRevisao(email, perfil)
+  return sobreporColecaoLocal(mapRow(row as Record<string, unknown>))
 }
 
 export async function salvarOnboarding(params: {
@@ -287,7 +289,9 @@ function aplicarRitualLocal(carta?: Pick<CartaTarot, "id" | "nome">): PerfilLoca
   }
   const datas = new Set(atual.rituais_em ?? [])
   datas.add(hoje)
-  const cartas = carta ? registrarCarta(atual.cartas_vividas ?? [], carta, hoje) : (atual.cartas_vividas ?? [])
+  const cartas = baralhoCompleto(
+    carta ? registrarCarta(atual.cartas_vividas ?? [], carta, hoje) : (atual.cartas_vividas ?? []),
+  )
   const recorde = Math.max(atual.recorde_streak ?? 0, streak)
   const perfil: PerfilLocal = {
     ...atual,
@@ -414,6 +418,6 @@ function sincronizarRitualLocal(perfil: PerfilLocal): Perfil {
     produto: perfil.produto ?? "acesso_base",
     ritual_feito_hoje: perfil.ultimo_ritual_em === hoje,
     rituais_em: perfil.rituais_em ?? [],
-    cartas_vividas: perfil.cartas_vividas ?? [],
+    cartas_vividas: baralhoCompleto(perfil.cartas_vividas ?? []),
   }
 }

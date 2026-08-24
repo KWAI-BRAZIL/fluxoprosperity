@@ -1,8 +1,8 @@
 import type { CartaTarot } from "./diario"
-import { gerarEcoLocal, MAX_RESPOSTA_ECO } from "./ritual-eco"
+import { gerarEcoLocal, MAX_ECO_IA, MAX_RESPOSTA_ECO } from "./ritual-eco"
 import { getSupabase, modoPreview, supabaseConfigurado } from "./supabase"
 
-const TIMEOUT_MS = 3000
+const TIMEOUT_MS = 4500
 
 function comTimeout<T>(promessa: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -48,8 +48,8 @@ export async function pedirEco(params: {
     )
     if (error) return fallback
     const eco = typeof data === "string" ? data : data && typeof data === "object" ? (data as { eco?: string }).eco : ""
-    const limpo = (eco ?? "").trim()
-    if (limpo.length < 8 || limpo.length > 400) return fallback
+    const limpo = (eco ?? "").trim().replace(/^["“«]+|["”»]+$/g, "").slice(0, MAX_ECO_IA)
+    if (limpo.length < 8) return fallback
     return limpo
   } catch {
     return fallback
