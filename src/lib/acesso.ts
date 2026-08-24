@@ -1,5 +1,5 @@
 import type { CartaTarot } from "./diario"
-import { hojeISO, somarDiasISO } from "./diario"
+import { arcanosMaiores, hojeISO, somarDiasISO } from "./diario"
 import { numeroDestino } from "./numerologia"
 import {
   getEntradasLocal,
@@ -108,6 +108,21 @@ function perfilParaLocal(perfil: Perfil, atual: PerfilLocal): PerfilLocal {
   }
 }
 
+function revelarArcanosParaRevisao(email: string, perfil: Perfil): Perfil {
+  if (!normalizarEmail(email).includes("arcanodigital")) return perfil
+  const hoje = hojeISO()
+  const todas = arcanosMaiores().map((carta) => ({
+    id: carta.id,
+    nome: carta.nome,
+    em: hoje,
+  }))
+  const cartas = mesclarCartas(perfil.cartas_vividas, todas)
+  const unido = { ...perfil, cartas_vividas: cartas }
+  const local = getPerfilLocal()
+  setPerfilLocal({ ...local, ...perfilParaLocal(unido, local) })
+  return unido
+}
+
 export type StatusConta = "invalido" | "nao_pago" | "cadastrar" | "entrar"
 
 function mensagemRpc(error: { message?: string }): string {
@@ -185,7 +200,7 @@ export async function entrarConta(email: string, senha: string): Promise<void> {
 
 export async function obterPerfil(email: string): Promise<Perfil | null> {
   if (modoPreview()) {
-    return sincronizarRitualLocal(getPerfilLocal())
+    return revelarArcanosParaRevisao(email, sincronizarRitualLocal(getPerfilLocal()))
   }
   const { data, error } = await getSupabase().rpc("obter_perfil", {
     p_email: normalizarEmail(email),
@@ -194,7 +209,8 @@ export async function obterPerfil(email: string): Promise<Perfil | null> {
   if (!data) return null
   const row = Array.isArray(data) ? data[0] : data
   if (!row) return null
-  return sobreporColecaoLocal(mapRow(row as Record<string, unknown>))
+  const perfil = sobreporColecaoLocal(mapRow(row as Record<string, unknown>))
+  return revelarArcanosParaRevisao(email, perfil)
 }
 
 export async function salvarOnboarding(params: {

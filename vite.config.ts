@@ -9,9 +9,13 @@ export default defineConfig({
       registerType: "autoUpdate",
       devOptions: { enabled: true },
       includeAssets: ["favicon.svg", "apple-touch-icon.png", "pwa-192.png"],
-      workbox: {
+        workbox: {
         globPatterns: ["**/*.{js,css,html,svg,woff2,webmanifest}"],
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        cacheId: "fluxo-arcanos-v2",
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
       },
       manifest: {
         name: "Fluxo da Prosperidade",
