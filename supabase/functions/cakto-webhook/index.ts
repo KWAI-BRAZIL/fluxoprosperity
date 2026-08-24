@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
 
 function classificarEvento(event: string): "ativar" | "falha" | "cancelar" | "ignorar" {
   if (
-    /purchase_approved|subscription_renewed|subscription\.renewed|subscription_created|subscription\.created|subscription_activated|recurring.*approv|renov/.test(
+    /purchase_approved|paid|subscription_renewed|subscription\.renewed|subscription_created|subscription\.created|subscription_activated|recurring.*approv|renov/.test(
       event,
     )
   ) {

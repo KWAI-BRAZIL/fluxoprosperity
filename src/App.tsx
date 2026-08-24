@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 import { Galaxy } from "./components/Galaxy"
+import { InstalarApp } from "./components/InstalarApp"
 import { ProtectedApp } from "./components/ProtectedApp"
 import { zerarAcessoLocalSePreciso } from "./lib/session"
 import { Checkout } from "./pages/Checkout"
@@ -22,6 +23,7 @@ export function App() {
     <BrowserRouter>
       <div className="app-bg">
         <Galaxy />
+        <InstalarApp />
         <div className="app-fg">
           <Routes>
             <Route path="/" element={<Landing />} />

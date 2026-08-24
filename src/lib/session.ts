@@ -3,7 +3,7 @@ const TOKEN_KEY = "abundancia_v5_sessao"
 const PERFIL_KEY = "abundancia_v5_perfil"
 const ENTRADAS_KEY = "abundancia_v5_entradas"
 const EPOCH_KEY = "abundancia_data_epoch"
-const EPOCH = "6-login-senha"
+const PIX_KEY = "abundancia_v5_pix_ok"
 
 export const EMAIL_PREVIEW = "preview@abundancia.test"
 const EMAIL_PREVIEW_ANTIGO = "preview@local"
@@ -170,4 +170,20 @@ function entradaValida(item: unknown): item is EntradaLocal {
   if (!item || typeof item !== "object") return false
   const row = item as Record<string, unknown>
   return typeof row.dia === "string" && Number.isFinite(Number(row.carta_id))
+}
+
+export function marcarPixConfirmado(): void {
+  try {
+    sessionStorage.setItem(PIX_KEY, "1")
+  } catch {
+    /* storage indisponível */
+  }
+}
+
+export function pixConfirmado(): boolean {
+  try {
+    return sessionStorage.getItem(PIX_KEY) === "1"
+  } catch {
+    return false
+  }
 }

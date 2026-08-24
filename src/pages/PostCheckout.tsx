@@ -5,7 +5,7 @@ import { Button } from "../components/Button"
 import { Shell } from "../components/Shell"
 import { PreparandoHalo, SectionCard, SectionKicker } from "../components/Ui"
 import { cadastrarConta, obterPerfil, onboardingCompleto, statusConta } from "../lib/acesso"
-import { EMAIL_PREVIEW, emailValido, getEmailSessao } from "../lib/session"
+import { EMAIL_PREVIEW, emailValido, getEmailSessao, marcarPixConfirmado, pixConfirmado } from "../lib/session"
 import { modoPreview } from "../lib/supabase"
 
 function emailInicial(params: URLSearchParams): string {
@@ -16,15 +16,42 @@ export function PostCheckout() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const preview = modoPreview()
+  const [liberado, setLiberado] = useState(
+    () => preview || pixConfirmado() || params.get("pago") === "1",
+  )
+
+  useEffect(() => {
+    if (params.get("pago") === "1") marcarPixConfirmado()
+  }, [params])
 
   useEffect(() => {
     if (window.self === window.top) return
     try {
-      window.top?.location.replace(window.location.href)
+      window.top?.location.replace(`${window.location.pathname}${window.location.search}`)
     } catch {
       /* iframe de outro domínio */
     }
   }, [])
+
+  useEffect(() => {
+    if (preview || pixConfirmado() || params.get("pago") === "1") {
+      setLiberado(true)
+      return
+    }
+    const email = emailInicial(params)
+    if (!emailValido(email)) {
+      navigate("/checkout", { replace: true })
+      return
+    }
+    void statusConta(email).then((estado) => {
+      if (estado === "cadastrar" || estado === "entrar") {
+        marcarPixConfirmado()
+        setLiberado(true)
+        return
+      }
+      navigate("/checkout", { replace: true })
+    })
+  }, [navigate, params, preview])
   const [email, setEmail] = useState(() => emailInicial(params))
   const [senha, setSenha] = useState("")
   const [confirma, setConfirma] = useState("")
@@ -87,6 +114,16 @@ export function PostCheckout() {
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     void cadastrar(email)
+  }
+
+  if (!liberado) {
+    return (
+      <Shell>
+        <div className="screen">
+          <p className="desc">Confirmando o Pix…</p>
+        </div>
+      </Shell>
+    )
   }
 
   return (

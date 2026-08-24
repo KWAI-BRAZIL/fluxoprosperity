@@ -300,8 +300,18 @@ export function jaFezRitual(perfil: Perfil | null): boolean {
 }
 
 export function checkoutUrl(): string | null {
-  const url = import.meta.env.VITE_CAKTO_CHECKOUT_URL
-  return url && url.length > 0 ? url : null
+  const bruto = import.meta.env.VITE_CAKTO_CHECKOUT_URL
+  if (!bruto) return null
+  try {
+    const url = new URL(bruto)
+    if (typeof window !== "undefined") {
+      const retorno = `${window.location.origin}/pos-compra?pago=1`
+      url.searchParams.set("redirectUrl", retorno)
+    }
+    return url.toString()
+  } catch {
+    return bruto
+  }
 }
 
 export type EntradaRitual = EntradaLocal
