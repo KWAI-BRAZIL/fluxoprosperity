@@ -3,6 +3,7 @@ const TOKEN_KEY = "abundancia_v5_sessao"
 const PERFIL_KEY = "abundancia_v5_perfil"
 const ENTRADAS_KEY = "abundancia_v5_entradas"
 const EPOCH_KEY = "abundancia_data_epoch"
+const EPOCH = "v5"
 const PIX_KEY = "abundancia_v5_pix_ok"
 
 export const EMAIL_PREVIEW = "preview@abundancia.test"
