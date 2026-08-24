@@ -1,7 +1,11 @@
+import { useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { BrandMark } from "../components/Brand"
-import { ButtonLink } from "../components/Button"
+import { Button, ButtonLink } from "../components/Button"
+import { CheckoutModal } from "../components/CheckoutModal"
 import { Shell } from "../components/Shell"
 import { SectionCard, SectionKicker } from "../components/Ui"
+
 const FEATURES = [
   { icon: "✦", title: "Número de destino, mapa do nome e ano pessoal" },
   { icon: "☾", title: "Leitura do dia com carta, conselho e atenção" },
@@ -9,10 +13,23 @@ const FEATURES = [
 ] as const
 
 export function Landing() {
+  const [params, setParams] = useSearchParams()
+  const [aberto, setAberto] = useState(() => params.get("checkout") === "1")
+
+  function abrirCheckout() {
+    setAberto(true)
+    setParams({ checkout: "1" }, { replace: true })
+  }
+
+  function fecharCheckout() {
+    setAberto(false)
+    if (params.get("checkout") === "1") setParams({}, { replace: true })
+  }
+
   const cta = (
-    <ButtonLink variant="gold" to="/checkout" className="cta-principal">
+    <Button type="button" variant="gold" className="cta-principal" onClick={abrirCheckout}>
       Desbloquear meu acesso — R$9,97/mês
-    </ButtonLink>
+    </Button>
   )
 
   return (
@@ -60,7 +77,9 @@ export function Landing() {
             <p className="price-ref">Assinatura mensal, cancelável quando quiser</p>
             <div className="price-row">
               <span className="price-old">R$150</span>
-              <span className="price">R$9,97<span className="price-period">/mês</span></span>
+              <span className="price">
+                R$9,97<span className="price-period">/mês</span>
+              </span>
             </div>
             <p className="price-note">Leitura, ritual e grimório inclusos. Cancele quando quiser, sem burocracia.</p>
           </SectionCard>
@@ -75,6 +94,7 @@ export function Landing() {
           Já cadastrei senha — entrar
         </ButtonLink>
       </div>
+      <CheckoutModal aberto={aberto} onFechar={fecharCheckout} />
     </Shell>
   )
 }

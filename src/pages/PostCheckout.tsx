@@ -40,7 +40,7 @@ export function PostCheckout() {
     }
     const email = emailInicial(params)
     if (!emailValido(email)) {
-      navigate("/checkout", { replace: true })
+      navigate("/?checkout=1", { replace: true })
       return
     }
     void statusConta(email).then((estado) => {
@@ -49,7 +49,7 @@ export function PostCheckout() {
         setLiberado(true)
         return
       }
-      navigate("/checkout", { replace: true })
+      navigate("/?checkout=1", { replace: true })
     })
   }, [navigate, params, preview])
   const [email, setEmail] = useState(() => emailInicial(params))
