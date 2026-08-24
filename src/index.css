@@ -1547,8 +1547,8 @@ button.card-inner {
 
 .grimorio-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
   flex: 1;
   align-content: start;
 }
@@ -1556,11 +1556,35 @@ button.card-inner {
 .arcano-card {
   min-height: 108px;
   border-radius: 14px;
-  padding: 12px 10px;
+  padding: 8px 8px 10px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   text-align: left;
+  text-decoration: none;
+}
+
+.arcano-ilustra-wrap {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+.arcano-ilustra {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.arcano-romano {
+  margin: 0 0 2px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--gold);
+}
+
+.verbete-carta {
+  width: min(220px, 58%);
+  margin: 4px auto 16px;
 }
 
 .arcano-vivo {

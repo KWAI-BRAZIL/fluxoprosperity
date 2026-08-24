@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { ButtonLink } from "../components/Button"
+import { IlustracaoArcano } from "../components/IlustracaoArcano"
 import { Shell } from "../components/Shell"
 import { useAcesso } from "../lib/acesso-context"
 import { listarEntradasRitual, type EntradaRitual } from "../lib/acesso"
@@ -48,6 +49,9 @@ export function Verbete() {
         <Link to="/grimorio" className="grimorio-atalho">
           ← Grimório
         </Link>
+        <div className="verbete-carta">
+          <IlustracaoArcano id={carta.id} />
+        </div>
         <h2>{carta.nome}</h2>
         <p className="desc">
           {vivida ? `Vivida em ${formatarData(vivida.em)}` : "Você ainda não viveu esta carta."}

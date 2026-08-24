@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import { BrandMark } from "../components/Brand"
+import { IlustracaoArcano } from "../components/IlustracaoArcano"
 import { Button, ButtonLink } from "../components/Button"
 import { WeekBar } from "../components/Progress"
 import { useAcesso } from "../lib/acesso-context"
@@ -65,6 +66,9 @@ export function Home() {
       <Shell nav>
         <div className="screen">
           <SectionKicker>Leitura de hoje</SectionKicker>
+          <div className="verbete-carta">
+            <IlustracaoArcano id={diario.carta.id} />
+          </div>
           <h2>{diario.carta.nome}</h2>
           <p className="desc">{diario.carta.leitura}</p>
           <CardInner k="Conselho" v={diario.conselho} plain />
