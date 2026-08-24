@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { Button } from "./Button"
+import { createPortal } from "react-dom"
 import { appJaInstalado, plataformaPwa } from "../lib/pwa"
 
 type BeforeInstallPromptEvent = Event & {
@@ -16,7 +16,6 @@ export function InstalarApp() {
   useEffect(() => {
     if (appJaInstalado()) return
     setAberto(true)
-
     const onPrompt = (event: Event) => {
       event.preventDefault()
       setPromptEvento(event as BeforeInstallPromptEvent)
@@ -25,7 +24,11 @@ export function InstalarApp() {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt)
   }, [])
 
-  if (!aberto || appJaInstalado()) return null
+  if (!aberto || appJaInstalado() || typeof document === "undefined") return null
+
+  function fechar() {
+    setAberto(false)
+  }
 
   async function instalarAndroid() {
     if (!promptEvento) return
@@ -33,78 +36,110 @@ export function InstalarApp() {
     try {
       await promptEvento.prompt()
       const escolha = await promptEvento.userChoice
-      if (escolha.outcome === "accepted") setAberto(false)
+      if (escolha.outcome === "accepted") fechar()
     } finally {
       setInstalando(false)
     }
   }
 
-  return (
-    <div className="pwa-backdrop" role="dialog" aria-labelledby="pwa-titulo" aria-modal="true">
-      <div className="pwa-card">
-        <img src="/apple-touch-icon.png" alt="" className="pwa-logo" width={56} height={56} />
-        <h2 id="pwa-titulo">Instale o Fluxo no celular</h2>
-        <p className="desc">
-          Abre mais rápido, fica na tela inicial e funciona como um app — sem loja.
-        </p>
+  const dica =
+    plataforma === "ios"
+      ? "Safari → Compartilhar → Tela de Início"
+      : plataforma === "android" && !promptEvento
+        ? "Menu ⋮ → Instalar app"
+        : "Atalho na tela inicial, sem loja"
 
-        {plataforma === "android" ? (
-          <>
-            {promptEvento ? (
-              <Button onClick={() => void instalarAndroid()} disabled={instalando}>
-                {instalando ? "Abrindo instalação…" : "Baixar e instalar agora"}
-              </Button>
-            ) : (
-              <ol className="pwa-passos">
-                <li>Toque no menu ⋮ no canto do Chrome.</li>
-                <li>Escolha <strong>Instalar app</strong> ou <strong>Adicionar à tela inicial</strong>.</li>
-                <li>Confirme. O ícone do Fluxo aparece na sua tela.</li>
-              </ol>
-            )}
-          </>
-        ) : plataforma === "ios" ? (
-          <ol className="pwa-passos">
-            <li>
-              Toque em <strong>Compartilhar</strong>{" "}
-              <span className="pwa-ios-share" aria-hidden="true">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 3v12M8 7l4-4 4 4"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>{" "}
-              na barra do Safari (em baixo, no iPhone).
-            </li>
-            <li>
-              Role e toque em <strong>Adicionar à Tela de Início</strong>.
-            </li>
-            <li>
-              Toque em <strong>Adicionar</strong>. Abra pelo ícone dourado — não pelo Safari.
-            </li>
-          </ol>
-        ) : (
-          <ol className="pwa-passos">
-            <li>No Chrome ou Edge, abra o menu do navegador.</li>
-            <li>
-              Escolha <strong>Instalar Fluxo da Prosperidade</strong> ou <strong>Adicionar à tela inicial</strong>.
-            </li>
-          </ol>
-        )}
-
-        <Button variant="ghost" type="button" onClick={() => setAberto(false)}>
-          Continuar no navegador
-        </Button>
+  return createPortal(
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 4000,
+      }}
+    >
+      <button
+        type="button"
+        aria-label="Fechar aviso de instalação"
+        onClick={fechar}
+        style={{
+          position: "absolute",
+          inset: 0,
+          border: 0,
+          background: "rgba(7, 5, 15, 0.35)",
+          cursor: "pointer",
+        }}
+      />
+      <div
+        role="dialog"
+        aria-labelledby="pwa-titulo"
+        style={{
+          position: "absolute",
+          top: "calc(10px + env(safe-area-inset-top))",
+          left: 12,
+          right: 12,
+          margin: "0 auto",
+          maxWidth: 480,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "8px 10px",
+          background: "#1c1430",
+          border: "1px solid rgba(217,164,65,0.35)",
+          borderRadius: 14,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+        }}
+      >
+        <img
+          src="/apple-touch-icon.png"
+          alt=""
+          width={28}
+          height={28}
+          style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p id="pwa-titulo" style={{ margin: 0, fontFamily: "Fraunces, serif", fontSize: 14, color: "#e2d0a0" }}>
+            Instale no celular
+          </p>
+          <p style={{ margin: "2px 0 0", fontSize: 11.5, color: "#a79bc2", lineHeight: 1.3 }}>{dica}</p>
+        </div>
+        {plataforma === "android" && promptEvento ? (
+          <button
+            type="button"
+            onClick={() => void instalarAndroid()}
+            disabled={instalando}
+            style={{
+              flexShrink: 0,
+              border: "1px solid #d9a441",
+              background: "transparent",
+              color: "#e2d0a0",
+              fontSize: 12,
+              padding: "6px 10px",
+              borderRadius: 999,
+            }}
+          >
+            {instalando ? "…" : "Instalar"}
+          </button>
+        ) : null}
+        <button
+          type="button"
+          onClick={fechar}
+          aria-label="Fechar"
+          style={{
+            flexShrink: 0,
+            width: 28,
+            height: 28,
+            border: 0,
+            background: "transparent",
+            color: "#a79bc2",
+            fontSize: 22,
+            lineHeight: 1,
+            cursor: "pointer",
+          }}
+        >
+          ×
+        </button>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

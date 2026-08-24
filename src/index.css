@@ -1554,42 +1554,48 @@ button.card-inner {
 }
 
 .arcano-card {
-  min-height: 108px;
   border-radius: 14px;
   padding: 8px 8px 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 4px;
   text-align: left;
   text-decoration: none;
 }
 
+.arcano-vivo {
+  background: #140e22;
+  border: 1px solid rgba(217, 164, 65, 0.45);
+}
+
 .arcano-ilustra-wrap {
   width: 100%;
-  margin-bottom: 6px;
+  min-height: 160px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #2a1848;
+  line-height: 0;
 }
 
 .arcano-ilustra {
   display: block;
   width: 100%;
   height: auto;
+  min-height: 160px;
+  object-fit: cover;
+  background: #2a1848;
 }
 
 .arcano-romano {
-  margin: 0 0 2px;
+  margin: 0;
   font-size: 10px;
   letter-spacing: 0.14em;
   color: var(--gold);
 }
 
 .verbete-carta {
-  width: min(220px, 58%);
+  width: min(240px, 70%);
   margin: 4px auto 16px;
-}
-
-.arcano-vivo {
-  background: linear-gradient(180deg, rgba(217, 164, 65, 0.18), rgba(0, 0, 0, 0.28));
-  border: 1px solid rgba(217, 164, 65, 0.45);
 }
 
 .arcano-oculto {
@@ -1655,54 +1661,94 @@ button.card-inner {
   border-color: rgba(217, 164, 65, 0.45);
 }
 
-.pwa-backdrop {
+.pwa-layer {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  background: rgba(7, 5, 15, 0.72);
+  pointer-events: none;
 }
 
-.pwa-card {
-  width: min(440px, 100%);
+.pwa-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: rgba(7, 5, 15, 0.28);
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.pwa-banner {
+  pointer-events: auto;
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  margin: 0 auto;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 22px 20px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
 }
 
 .pwa-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   object-fit: cover;
+  flex-shrink: 0;
 }
 
-.pwa-card h2 {
+.pwa-banner-texto {
+  flex: 1;
+  min-width: 0;
+}
+
+.pwa-titulo {
   margin: 0;
   font-family: Fraunces, serif;
-  font-size: 1.35rem;
-}
-
-.pwa-passos {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  color: var(--cream);
   font-size: 14.5px;
-  line-height: 1.45;
+  color: var(--gold-soft);
+  line-height: 1.2;
 }
 
-.pwa-ios-share {
-  display: inline-flex;
-  vertical-align: middle;
-  color: var(--gold);
+.pwa-dica {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.pwa-cta {
+  flex-shrink: 0;
+  border: 1px solid var(--gold);
+  background: transparent;
+  color: var(--gold-soft);
+  font-size: 12.5px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.pwa-cta:disabled {
+  opacity: 0.6;
+}
+
+.pwa-fechar {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
 }

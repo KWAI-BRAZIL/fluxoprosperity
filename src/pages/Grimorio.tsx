@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom"
-import { useAcesso } from "../lib/acesso-context"
 import { IlustracaoArcano } from "../components/IlustracaoArcano"
 import { Shell } from "../components/Shell"
+import { useAcesso } from "../lib/acesso-context"
 import { arcanosMaiores } from "../lib/diario"
 
 function formatarData(iso: string): string {
@@ -20,7 +20,7 @@ export function Grimorio() {
       <div className="screen">
         <h2>Seu grimório</h2>
         <p className="desc">
-          As {total} ilustrações estão reveladas para você conferir a arte. Depois fechamos as que ainda não tiverem ritual.
+          As {total} ilustrações estão reveladas para você conferir a arte.
         </p>
         <Link to="/padroes" className="grimorio-atalho">
           Ver seus padrões neste mês
