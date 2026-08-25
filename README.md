@@ -28,7 +28,7 @@ Acesso ao app **nunca** é liberado por parâmetro de URL ou `localStorage` sozi
 | --- | --- | --- |
 | `VITE_SUPABASE_URL` | Front / Vercel | URL do projeto |
 | `VITE_SUPABASE_ANON_KEY` | Front / Vercel | Chave anon (RLS + RPCs) |
-| `VITE_CAKTO_CHECKOUT_URL` | Front / Vercel | Checkout do acesso base (R$9,92) |
+| `VITE_CAKTO_CHECKOUT_URL` | Front / Vercel | Checkout do acesso único (R$14,97) |
 | `VITE_CAKTO_LEITURA_URL` | Front / Vercel | Upsell leitura (R$97) |
 | `VITE_CAKTO_ASSINATURA_URL` | Front / Vercel | Upsell assinatura (R$27/mês) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Só Edge Function | Upsert em `acessos` |
@@ -60,7 +60,7 @@ O segredo da Cakto vai no JSON (`secret`), não em HMAC de header. A function co
 
 ## Cakto (manual)
 
-1. Cadastre os 3 produtos: acesso base R$9,92 / leitura R$97 / assinatura R$27/mês.
+1. Cadastre os 3 produtos: acesso único R$14,97 / leitura R$97 / assinatura R$27/mês.
 2. Cole os links de checkout nas variáveis `VITE_CAKTO_*`.
 3. URL de redirecionamento pós-compra: `https://seu-dominio/pos-compra`.
 4. Ligue o webhook no evento Compra aprovada.

@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
 
   let body: {
     email?: string
+    token?: string
     nome?: string
     tipo?: string
     periodo?: string
@@ -35,11 +36,10 @@ Deno.serve(async (req) => {
 
   const email = String(body.email ?? "").trim().toLowerCase()
   const tipo = body.tipo === "mes" ? "mes" : "semana"
-  const periodo = String(body.periodo ?? "").trim().slice(0, 24)
   const nome = String(body.nome ?? "você").trim().slice(0, 80)
-  const entradas = Array.isArray(body.entradas) ? body.entradas.slice(0, 28) : []
+  let entradas = Array.isArray(body.entradas) ? body.entradas.slice(0, 28) : []
 
-  if (!email.includes("@") || !periodo || entradas.length < 3) {
+  if (!email.includes("@")) {
     return json({ error: "invalid_payload" }, 400)
   }
 
@@ -51,10 +51,40 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: liberado, error: acessoErr } = await supabase.rpc("verificar_acesso", {
+  const token = String(body.token ?? "").trim()
+  const { data: sessaoOk, error: sessaoErr } = await supabase.rpc("verificar_sessao", {
     p_email: email,
+    p_token: token,
   })
-  if (acessoErr || !liberado) return json({ error: "forbidden" }, 403)
+  if (sessaoErr || !sessaoOk) return json({ error: "forbidden" }, 403)
+
+  const { periodo, inicio, fim } = janelaPeriodo(tipo)
+
+  const { data: rows } = await supabase
+    .from("ritual_entradas")
+    .select("dia, carta_nome, perguntas, respostas")
+    .eq("email", email)
+    .gte("dia", inicio)
+    .lte("dia", fim)
+    .order("dia", { ascending: true })
+    .limit(28)
+
+  if (Array.isArray(rows) && rows.length >= 3) {
+    entradas = rows.map((r) => ({
+      dia: String((r as { dia?: string }).dia ?? ""),
+      carta_nome: String((r as { carta_nome?: string }).carta_nome ?? ""),
+      perguntas: Array.isArray((r as { perguntas?: string[] }).perguntas)
+        ? (r as { perguntas: string[] }).perguntas
+        : [],
+      respostas: Array.isArray((r as { respostas?: string[] }).respostas)
+        ? (r as { respostas: string[] }).respostas
+        : [],
+    }))
+  }
+
+  if (entradas.length < 3) {
+    return json({ error: "invalid_payload" }, 400)
+  }
 
   const { data: existente } = await supabase
     .from("sinteses")
@@ -141,4 +171,26 @@ function json(payload: Record<string, unknown>, status: number): Response {
     status,
     headers: { ...CORS, "Content-Type": "application/json" },
   })
+}
+
+/** Período em America/Sao_Paulo — não usa o valor enviado pelo cliente. */
+function janelaPeriodo(tipo: "semana" | "mes"): { periodo: string; inicio: string; fim: string } {
+  const tz = "America/Sao_Paulo"
+  const now = new Date()
+  const y = Number(now.toLocaleString("en-US", { timeZone: tz, year: "numeric" }))
+  const mo = Number(now.toLocaleString("en-US", { timeZone: tz, month: "numeric" }))
+  const d = Number(now.toLocaleString("en-US", { timeZone: tz, day: "numeric" }))
+  const fim = `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+  if (tipo === "mes") {
+    const inicio = `${y}-${String(mo).padStart(2, "0")}-01`
+    return { periodo: `mes-${y}-${String(mo).padStart(2, "0")}`, inicio, fim }
+  }
+  const wd = now.toLocaleString("en-US", { timeZone: tz, weekday: "short" })
+  const dow = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(wd)
+  const domingo = new Date(Date.UTC(y, mo - 1, d) - Math.max(0, dow) * 86_400_000)
+  const ys = domingo.getUTCFullYear()
+  const ms = String(domingo.getUTCMonth() + 1).padStart(2, "0")
+  const ds = String(domingo.getUTCDate()).padStart(2, "0")
+  const inicio = `${ys}-${ms}-${ds}`
+  return { periodo: `sem-${inicio}`, inicio, fim }
 }

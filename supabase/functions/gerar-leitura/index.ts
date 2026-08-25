@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
 
   let body: {
     email?: string
+    token?: string
     nome?: string
     destino?: number
     expressao?: number
@@ -46,10 +47,21 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: liberado, error: acessoErr } = await supabase.rpc("verificar_acesso", {
+  const token = String(body.token ?? "").trim()
+  const { data: sessaoOk, error: sessaoErr } = await supabase.rpc("verificar_sessao", {
     p_email: email,
+    p_token: token,
   })
-  if (acessoErr || !liberado) return json({ error: "forbidden" }, 403)
+  if (sessaoErr || !sessaoOk) return json({ error: "forbidden" }, 403)
+
+  const { data: salva } = await supabase
+    .from("leituras_onboarding")
+    .select("texto")
+    .eq("email", email)
+    .maybeSingle()
+  if (salva?.texto && String(salva.texto).trim().length >= 80) {
+    return json({ texto: String(salva.texto).slice(0, 1800) }, 200)
+  }
 
   const sistema = `Você é um Oráculo Terrena: uma presença psicanalítica, mística e orientada à ação.
 Sua missão é atuar como um espelho psíquico para a usuária.
@@ -93,7 +105,17 @@ Escreva 3 parágrafos curtos: (1) como esses números se combinam nela — mostr
       .join("\n")
       .trim() ?? ""
     if (texto.length < 80) return json({ error: "empty" }, 502)
-    return json({ texto: texto.slice(0, 1800) }, 200)
+    const limpo = texto.slice(0, 1800)
+    const { error: insErr } = await supabase.from("leituras_onboarding").insert({ email, texto: limpo })
+    if (insErr?.code === "23505") {
+      const { data: deNovo } = await supabase
+        .from("leituras_onboarding")
+        .select("texto")
+        .eq("email", email)
+        .maybeSingle()
+      if (deNovo?.texto) return json({ texto: String(deNovo.texto).slice(0, 1800) }, 200)
+    }
+    return json({ texto: limpo }, 200)
   } catch {
     return json({ error: "timeout" }, 504)
   } finally {

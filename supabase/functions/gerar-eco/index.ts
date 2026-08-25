@@ -10,6 +10,7 @@ const CORS = {
 
 type Body = {
   email?: string
+  token?: string
   cartaId?: number
   cartaNome?: string
   essencia?: string
@@ -61,10 +62,12 @@ Deno.serve(async (req) => {
     auth: { persistSession: false, autoRefreshToken: false },
   })
 
-  const { data: liberado, error: acessoErr } = await supabase.rpc("verificar_acesso", {
+  const token = String(body.token ?? "").trim()
+  const { data: sessaoOk, error: sessaoErr } = await supabase.rpc("verificar_sessao", {
     p_email: email,
+    p_token: token,
   })
-  if (acessoErr || !liberado) {
+  if (sessaoErr || !sessaoOk) {
     return json({ error: "forbidden" }, 403)
   }
 

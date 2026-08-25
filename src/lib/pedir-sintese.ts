@@ -1,4 +1,5 @@
 import { listarEntradasRitual, obterSinteseSalva, type EntradaRitual } from "./acesso"
+import { getSessaoToken } from "./session"
 import { getSupabase, modoPreview, supabaseConfigurado } from "./supabase"
 
 function comTimeout<T>(promessa: Promise<T>, ms: number): Promise<T> {
@@ -47,6 +48,7 @@ export async function pedirSintese(params: {
       getSupabase().functions.invoke("gerar-sintese", {
         body: {
           email: params.email,
+          token: getSessaoToken() ?? "",
           nome: params.nome,
           tipo: params.tipo,
           periodo: params.periodo,

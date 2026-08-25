@@ -37,7 +37,7 @@ export function Login() {
       const estado = await statusConta(destino)
       if (estado === "nao_pago" || estado === "invalido") {
         setStatus("error")
-        setMensagem("Não há pagamento para este e-mail. Assine para criar um acesso.")
+        setMensagem("Não há pagamento para este e-mail. Pague para criar um acesso.")
         return
       }
       if (estado === "cadastrar") {

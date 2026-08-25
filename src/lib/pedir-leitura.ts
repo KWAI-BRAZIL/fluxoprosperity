@@ -1,3 +1,4 @@
+import { getSessaoToken } from "./session"
 import { getSupabase, modoPreview, supabaseConfigurado } from "./supabase"
 
 function comTimeout<T>(promessa: Promise<T>, ms: number): Promise<T> {
@@ -28,7 +29,7 @@ export async function pedirLeituraAbertura(params: {
   try {
     const { data, error } = await comTimeout(
       getSupabase().functions.invoke("gerar-leitura", {
-        body: params,
+        body: { ...params, token: getSessaoToken() ?? "" },
       }),
       8000,
     )

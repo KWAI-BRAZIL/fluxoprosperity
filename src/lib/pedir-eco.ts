@@ -1,5 +1,6 @@
 import type { CartaTarot } from "./diario"
 import { gerarEcoLocal, MAX_ECO_IA, MAX_RESPOSTA_ECO } from "./ritual-eco"
+import { getSessaoToken } from "./session"
 import { getSupabase, modoPreview, supabaseConfigurado } from "./supabase"
 
 const TIMEOUT_MS = 4500
@@ -36,6 +37,7 @@ export async function pedirEco(params: {
       getSupabase().functions.invoke("gerar-eco", {
         body: {
           email: params.email,
+          token: getSessaoToken() ?? "",
           cartaId: params.carta.id,
           cartaNome: params.carta.nome,
           essencia: params.carta.resumo,

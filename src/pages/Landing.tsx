@@ -28,7 +28,7 @@ export function Landing() {
 
   const cta = (
     <Button type="button" variant="gold" className="cta-principal" onClick={abrirCheckout}>
-      Desbloquear meu acesso — R$9,97/mês
+      Desbloquear meu acesso
     </Button>
   )
 
@@ -74,20 +74,18 @@ export function Landing() {
         <div>
           <SectionKicker>Investimento</SectionKicker>
           <SectionCard className="section-card-preco">
-            <p className="price-ref">Assinatura mensal, cancelável quando quiser</p>
+            <p className="price-ref">Acesso único, pagamento único</p>
             <div className="price-row">
               <span className="price-old">R$150</span>
-              <span className="price">
-                R$9,97<span className="price-period">/mês</span>
-              </span>
+              <span className="price">R$14,97</span>
             </div>
-            <p className="price-note">Leitura, ritual e grimório inclusos. Cancele quando quiser, sem burocracia.</p>
+            <p className="price-note">Leitura, ritual e grimório inclusos. Um pagamento, sem mensalidade.</p>
           </SectionCard>
         </div>
 
         <div className="landing-cta">
           {cta}
-          <p className="cta-trust">Pix na primeira cobrança. Cancele quando quiser, sem burocracia.</p>
+          <p className="cta-trust">Pix único. Sem renovação automática.</p>
         </div>
 
         <ButtonLink variant="ghost" to="/entrar" className="cta-secondary">

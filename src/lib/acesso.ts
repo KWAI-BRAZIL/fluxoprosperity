@@ -7,6 +7,7 @@ import {
   getPerfilLocal,
   normalizarEmail,
   setPerfilLocal,
+  getSessaoToken,
   setSessao,
   upsertEntradaLocal,
   type CartaVivida,
@@ -134,19 +135,18 @@ function mensagemRpc(error: { message?: string }): string {
   if (raw.includes("pagamento não encontrado")) {
     return "Ainda não encontramos um pagamento para este e-mail. Se você acabou de pagar, aguarde um minuto."
   }
-  if (raw.includes("assinatura inativa")) return "Sua assinatura não está ativa no momento."
+  if (raw.includes("assinatura inativa")) return "Seu acesso não está ativo no momento."
   if (raw.includes("pelo menos 8")) return "A senha precisa ter pelo menos 8 caracteres."
   if (raw.includes("e-mail ou senha")) return "E-mail ou senha inválidos."
   return error.message || "Não foi possível concluir."
 }
 
+function tokenSessao(): string {
+  return getSessaoToken() ?? ""
+}
+
 export async function verificarAcesso(email: string): Promise<boolean> {
-  if (modoPreview()) return true
-  const { data, error } = await getSupabase().rpc("verificar_acesso", {
-    p_email: normalizarEmail(email),
-  })
-  if (error) throw error
-  return Boolean(data)
+  return verificarSessao(email, tokenSessao())
 }
 
 export async function statusConta(email: string): Promise<StatusConta> {
@@ -207,6 +207,7 @@ export async function obterPerfil(email: string): Promise<Perfil | null> {
   }
   const { data, error } = await getSupabase().rpc("obter_perfil", {
     p_email: normalizarEmail(email),
+    p_token: tokenSessao(),
   })
   if (error) throw error
   if (!data) return null
@@ -233,6 +234,7 @@ export async function salvarOnboarding(params: {
   }
   const { data, error } = await getSupabase().rpc("salvar_onboarding", {
     p_email: normalizarEmail(params.email),
+    p_token: tokenSessao(),
     p_nome: params.nome.trim(),
     p_data_nascimento: params.dataNascimento,
   })
@@ -256,19 +258,15 @@ export async function registrarRitual(
     return sincronizarRitualLocal(local)
   }
 
-  const args: Record<string, unknown> = { p_email: normalizarEmail(email) }
+  const args: Record<string, unknown> = {
+    p_email: normalizarEmail(email),
+    p_token: tokenSessao(),
+  }
   if (carta) {
     args.p_carta_id = carta.id
     args.p_carta_nome = carta.nome
   }
-  let { data, error } = await getSupabase().rpc("registrar_ritual", args)
-  if (error && carta) {
-    const retry = await getSupabase().rpc("registrar_ritual", {
-      p_email: normalizarEmail(email),
-    })
-    data = retry.data
-    error = retry.error
-  }
+  const { data, error } = await getSupabase().rpc("registrar_ritual", args)
   if (error) throw error
   const row = Array.isArray(data) ? data[0] : data
   if (!row) throw new Error("Não foi possível registrar o ritual.")
@@ -355,6 +353,7 @@ export async function salvarEntradaRitual(params: {
   if (modoPreview()) return
   const { error } = await getSupabase().rpc("salvar_entrada_ritual", {
     p_email: normalizarEmail(params.email),
+    p_token: tokenSessao(),
     p_carta_id: params.carta.id,
     p_carta_nome: params.carta.nome,
     p_perguntas: entrada.perguntas,
@@ -369,6 +368,7 @@ export async function listarEntradasRitual(email: string): Promise<EntradaLocal[
   if (modoPreview()) return local
   const { data, error } = await getSupabase().rpc("listar_entradas_ritual", {
     p_email: normalizarEmail(email),
+    p_token: tokenSessao(),
   })
   if (error || !data) return local
   const remotas: EntradaLocal[] = []
@@ -398,6 +398,7 @@ export async function obterSinteseSalva(
   if (modoPreview()) return null
   const { data, error } = await getSupabase().rpc("obter_sintese", {
     p_email: normalizarEmail(email),
+    p_token: tokenSessao(),
     p_tipo: tipo,
     p_periodo: periodo,
   })

@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "npm:@supabase/supabase-js@2"
 
 /**
- * Webhook Cakto — compra única (legado) e assinatura mensal.
+ * Webhook Cakto — compra única (R$14,97) e assinatura mensal (legado).
  *
  * Segredo no JSON `secret` ou header. Docs Cakto: webhooks.
  *
@@ -43,6 +43,26 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "unauthorized" }, 401)
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+  if (!supabaseUrl || !serviceKey) {
+    return json({ ok: false, error: "misconfigured" }, 500)
+  }
+
+  const supabase = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+
+  const eventId = await idDoEvento(req, body)
+  const { error: idErr } = await supabase.from("webhook_eventos_processados").insert({ id: eventId })
+  if (idErr) {
+    if (idErr.code === "23505") {
+      return json({ ok: true, duplicate: true }, 200)
+    }
+    console.error("cakto-webhook: falha ao registrar evento", idErr.message)
+    return json({ ok: false, error: "db_error" }, 500)
+  }
+
   const event = String(body.event ?? body.type ?? "").toLowerCase()
   const acao = classificarEvento(event)
   if (acao === "ignorar") {
@@ -58,21 +78,12 @@ Deno.serve(async (req) => {
 
   if (!email.includes("@")) {
     console.error("cakto-webhook: e-mail ausente", { event })
+    await supabase.from("webhook_eventos_processados").delete().eq("id", eventId)
     return json({ ok: false, error: "missing_email" }, 400)
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? ""
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-  if (!supabaseUrl || !serviceKey) {
-    return json({ ok: false, error: "misconfigured" }, 500)
-  }
-
-  const supabase = createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-
   const proxima = proximaCobranca(data, acao)
-  const patch = montarPatch(acao, nome, proxima)
+  const patch = montarPatch(acao, nome, proxima, ehAssinatura(event))
 
   const { error } = await supabase.from("acessos").upsert(
     { email, ...patch },
@@ -81,11 +92,16 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error("cakto-webhook: falha no upsert", error.message)
+    await supabase.from("webhook_eventos_processados").delete().eq("id", eventId)
     return json({ ok: false, error: "db_error" }, 500)
   }
 
   return json({ ok: true, action: acao }, 200)
 })
+
+function ehAssinatura(event: string): boolean {
+  return /subscription|recurring|renov/.test(event)
+}
 
 function classificarEvento(event: string): "ativar" | "falha" | "cancelar" | "ignorar" {
   if (
@@ -125,7 +141,16 @@ function montarPatch(
   acao: "ativar" | "falha" | "cancelar",
   nome: string | null,
   proxima: string,
+  assinatura: boolean,
 ): Record<string, unknown> {
+  if (!assinatura && acao === "ativar") {
+    return {
+      produto: "acesso_base",
+      pago: true,
+      assinatura_status: "inativa" satisfies StatusAssinatura,
+      ...(nome ? { nome } : {}),
+    }
+  }
   const base: Record<string, unknown> = {
     produto: "assinatura",
     proxima_cobranca: proxima,
@@ -167,4 +192,28 @@ function json(payload: Json, status: number): Response {
     status,
     headers: { "Content-Type": "application/json" },
   })
+}
+
+async function idDoEvento(req: Request, body: Json): Promise<string> {
+  const data = (body.data ?? {}) as Json
+  const direto = [
+    body.id,
+    body.event_id,
+    body.eventId,
+    body.uuid,
+    data.id,
+    data.event_id,
+    req.headers.get("x-cakto-event-id"),
+    req.headers.get("x-webhook-id"),
+    req.headers.get("x-request-id"),
+  ]
+    .map((v) => String(v ?? "").trim())
+    .find((v) => v.length > 0)
+  if (direto) return direto.slice(0, 180)
+
+  const copia = { ...body }
+  delete copia.secret
+  const enc = new TextEncoder()
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", enc.encode(JSON.stringify(copia))))
+  return [...hash].map((b) => b.toString(16).padStart(2, "0")).join("").slice(0, 64)
 }
