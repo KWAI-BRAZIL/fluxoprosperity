@@ -7,8 +7,14 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
 }
 
+function safariNoIos(): boolean {
+  const ua = navigator.userAgent || ""
+  return /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|Chrome|Android/i.test(ua)
+}
+
 export function InstalarApp() {
   const [aberto, setAberto] = useState(false)
+  const [guia, setGuia] = useState(false)
   const [promptEvento, setPromptEvento] = useState<BeforeInstallPromptEvent | null>(null)
   const [instalando, setInstalando] = useState(false)
   const plataforma = typeof navigator === "undefined" ? "outro" : plataformaPwa()
@@ -28,10 +34,14 @@ export function InstalarApp() {
 
   function fechar() {
     setAberto(false)
+    setGuia(false)
   }
 
-  async function instalarAndroid() {
-    if (!promptEvento) return
+  async function instalar() {
+    if (!promptEvento) {
+      setGuia(true)
+      return
+    }
     setInstalando(true)
     try {
       await promptEvento.prompt()
@@ -42,102 +52,72 @@ export function InstalarApp() {
     }
   }
 
-  const dica =
-    plataforma === "ios"
+  const podeBaixar = Boolean(promptEvento)
+  const dica = podeBaixar
+    ? "Atalho na tela inicial, sem loja"
+    : plataforma === "ios"
       ? "Safari → Compartilhar → Tela de Início"
-      : plataforma === "android" && !promptEvento
-        ? "Menu ⋮ → Instalar app"
-        : "Atalho na tela inicial, sem loja"
+      : "Menu do navegador → Instalar app"
+
+  const passosIos = safariNoIos()
+    ? [
+        "Toque no botão Compartilhar (quadrado com a seta para cima).",
+        "Role a lista e toque em Adicionar à Tela de Início.",
+        "Confirme em Adicionar. O ícone aparece na tela inicial.",
+      ]
+    : [
+        "Abra este site no Safari (no iPhone o atalho só funciona no Safari).",
+        "Toque em Compartilhar (quadrado com a seta para cima).",
+        "Toque em Adicionar à Tela de Início e depois em Adicionar.",
+      ]
+
+  const passosAndroid = [
+    "Toque no menu ⋮ no canto do Chrome.",
+    "Toque em Instalar app ou Adicionar à tela inicial.",
+    "Confirme. O ícone aparece junto aos outros apps.",
+  ]
+
+  const passosOutro = [
+    "No Chrome ou Edge, abra o menu do navegador.",
+    "Toque em Instalar Fluxo da Prosperidade (ou Instalar app).",
+    "Confirme. O app abre em janela própria, sem a barra do site.",
+  ]
+
+  const passos = plataforma === "ios" ? passosIos : plataforma === "android" ? passosAndroid : passosOutro
 
   return createPortal(
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 4000,
-      }}
-    >
-      <button
-        type="button"
-        aria-label="Fechar aviso de instalação"
-        onClick={fechar}
-        style={{
-          position: "absolute",
-          inset: 0,
-          border: 0,
-          background: "rgba(7, 5, 15, 0.35)",
-          cursor: "pointer",
-        }}
-      />
+    <div className="pwa-layer" style={{ zIndex: 4000, pointerEvents: "auto" }}>
+      <button type="button" className="pwa-scrim" aria-label="Fechar aviso de instalação" onClick={fechar} />
       <div
         role="dialog"
         aria-labelledby="pwa-titulo"
-        style={{
-          position: "absolute",
-          top: "calc(10px + env(safe-area-inset-top))",
-          left: 12,
-          right: 12,
-          margin: "0 auto",
-          maxWidth: 480,
-          display: "flex",
-          alignItems: "center",
-          gap: 10,
-          padding: "8px 10px",
-          background: "#1c1430",
-          border: "1px solid rgba(217,164,65,0.35)",
-          borderRadius: 14,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-        }}
+        className={`pwa-banner${guia ? " pwa-banner-guia" : ""}`}
       >
-        <img
-          src="/apple-touch-icon.png"
-          alt=""
-          width={28}
-          height={28}
-          style={{ width: 28, height: 28, borderRadius: 7, flexShrink: 0 }}
-        />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p id="pwa-titulo" style={{ margin: 0, fontFamily: "Fraunces, serif", fontSize: 14, color: "#e2d0a0" }}>
+        <img className="pwa-logo" src="/apple-touch-icon.png" alt="" width={28} height={28} />
+        <div className="pwa-banner-texto">
+          <p id="pwa-titulo" className="pwa-titulo">
             Instale no celular
           </p>
-          <p style={{ margin: "2px 0 0", fontSize: 11.5, color: "#a79bc2", lineHeight: 1.3 }}>{dica}</p>
+          <p className="pwa-dica">{dica}</p>
         </div>
-        {plataforma === "android" && promptEvento ? (
-          <button
-            type="button"
-            onClick={() => void instalarAndroid()}
-            disabled={instalando}
-            style={{
-              flexShrink: 0,
-              border: "1px solid #d9a441",
-              background: "transparent",
-              color: "#e2d0a0",
-              fontSize: 12,
-              padding: "6px 10px",
-              borderRadius: 999,
-            }}
-          >
-            {instalando ? "…" : "Instalar"}
-          </button>
-        ) : null}
         <button
           type="button"
-          onClick={fechar}
-          aria-label="Fechar"
-          style={{
-            flexShrink: 0,
-            width: 28,
-            height: 28,
-            border: 0,
-            background: "transparent",
-            color: "#a79bc2",
-            fontSize: 22,
-            lineHeight: 1,
-            cursor: "pointer",
-          }}
+          className="pwa-cta"
+          onClick={() => void instalar()}
+          disabled={instalando}
         >
+          {instalando ? "…" : podeBaixar ? "Instalar" : "Como instalar"}
+        </button>
+        <button type="button" className="pwa-fechar" onClick={fechar} aria-label="Fechar">
           ×
         </button>
+        {guia ? (
+          <ol className="pwa-passos">
+            {passos.map((passo) => (
+              <li key={passo}>{passo}</li>
+            ))}
+          </ol>
+        ) : null}
       </div>
     </div>,
     document.body,
