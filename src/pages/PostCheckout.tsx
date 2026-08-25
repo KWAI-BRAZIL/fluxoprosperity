@@ -5,7 +5,7 @@ import { Button } from "../components/Button"
 import { Shell } from "../components/Shell"
 import { PreparandoHalo, SectionCard, SectionKicker } from "../components/Ui"
 import { cadastrarConta, obterPerfil, onboardingCompleto, statusConta } from "../lib/acesso"
-import { EMAIL_PREVIEW, emailValido, getEmailSessao, marcarPixConfirmado, pixConfirmado } from "../lib/session"
+import { EMAIL_PREVIEW, emailValido, getEmailSessao } from "../lib/session"
 import { modoPreview } from "../lib/supabase"
 
 function emailInicial(params: URLSearchParams): string {
@@ -16,13 +16,12 @@ export function PostCheckout() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const preview = modoPreview()
-  const [liberado, setLiberado] = useState(
-    () => preview || pixConfirmado() || params.get("pago") === "1",
-  )
-
-  useEffect(() => {
-    if (params.get("pago") === "1") marcarPixConfirmado()
-  }, [params])
+  const [email, setEmail] = useState(() => emailInicial(params))
+  const [senha, setSenha] = useState("")
+  const [confirma, setConfirma] = useState("")
+  const [pagoNoServidor, setPagoNoServidor] = useState(preview)
+  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "nao" | "error">("idle")
+  const [mensagem, setMensagem] = useState("")
 
   useEffect(() => {
     if (window.self === window.top) return
@@ -33,30 +32,46 @@ export function PostCheckout() {
     }
   }, [])
 
-  useEffect(() => {
-    if (preview || pixConfirmado() || params.get("pago") === "1") {
-      setLiberado(true)
-      return
+  async function conferirPagamento(destino: string): Promise<boolean> {
+    if (preview) return true
+    if (!emailValido(destino)) {
+      setStatus("error")
+      setMensagem("Use o mesmo e-mail da compra.")
+      return false
     }
-    const email = emailInicial(params)
-    if (!emailValido(email)) {
-      navigate("/?checkout=1", { replace: true })
-      return
-    }
-    void statusConta(email).then((estado) => {
-      if (estado === "cadastrar" || estado === "entrar") {
-        marcarPixConfirmado()
-        setLiberado(true)
-        return
+    setStatus("loading")
+    setMensagem("")
+    try {
+      const estado = await statusConta(destino)
+      if (estado === "cadastrar") {
+        setPagoNoServidor(true)
+        setStatus("idle")
+        setMensagem("")
+        return true
       }
-      navigate("/?checkout=1", { replace: true })
-    })
-  }, [navigate, params, preview])
-  const [email, setEmail] = useState(() => emailInicial(params))
-  const [senha, setSenha] = useState("")
-  const [confirma, setConfirma] = useState("")
-  const [status, setStatus] = useState<"idle" | "loading" | "ok" | "nao" | "error">("idle")
-  const [mensagem, setMensagem] = useState("")
+      if (estado === "entrar") {
+        setStatus("error")
+        setMensagem("Esta conta já tem senha. Entre pelo login.")
+        return false
+      }
+      setPagoNoServidor(false)
+      setStatus("nao")
+      setMensagem(
+        "Ainda não há pagamento deste e-mail no servidor. Se o Pix acabou de cair, aguarde um minuto e tente de novo.",
+      )
+      return false
+    } catch (e) {
+      setStatus("error")
+      setMensagem(e instanceof Error ? e.message : "Não foi possível conferir o pagamento.")
+      return false
+    }
+  }
+
+  useEffect(() => {
+    const daUrl = params.get("email")
+    if (preview || !daUrl || !emailValido(daUrl)) return
+    void conferirPagamento(daUrl)
+  }, [params, preview])
 
   async function irAoApp(destino: string) {
     const perfil = await obterPerfil(destino)
@@ -87,25 +102,14 @@ export function PostCheckout() {
       setMensagem("As senhas não coincidem.")
       return
     }
+    const ok = await conferirPagamento(destino)
+    if (!ok) return
     setStatus("loading")
-    setMensagem("")
     try {
-      const estado = await statusConta(destino)
-      if (estado === "nao_pago" || estado === "invalido") {
-        setStatus("nao")
-        setMensagem(
-          "Ainda não encontramos um pagamento para este e-mail. Se você acabou de pagar, aguarde um minuto e tente de novo.",
-        )
-        return
-      }
-      if (estado === "entrar") {
-        setStatus("error")
-        setMensagem("Esta conta já tem senha. Entre pelo login.")
-        return
-      }
       await cadastrarConta(destino, senha)
       await irAoApp(destino)
     } catch (e) {
+      setPagoNoServidor(false)
       setStatus("error")
       setMensagem(e instanceof Error ? e.message : "Não foi possível criar o acesso.")
     }
@@ -113,17 +117,11 @@ export function PostCheckout() {
 
   function onSubmit(e: FormEvent) {
     e.preventDefault()
+    if (!pagoNoServidor) {
+      void conferirPagamento(email)
+      return
+    }
     void cadastrar(email)
-  }
-
-  if (!liberado) {
-    return (
-      <Shell>
-        <div className="screen">
-          <p className="desc">Confirmando o Pix…</p>
-        </div>
-      </Shell>
-    )
   }
 
   return (
@@ -134,10 +132,11 @@ export function PostCheckout() {
             <BrandMark />
           </div>
           <PreparandoHalo />
-          <h2>Pagamento confirmado. Crie seu acesso.</h2>
+          <h2>{pagoNoServidor ? "Pagamento encontrado. Crie seu acesso." : "Confirme o e-mail do Pix"}</h2>
           <p className="desc">
-            Use o e-mail da compra e defina uma senha. Só quem cadastrar depois de pagar entra no
-            app.
+            {pagoNoServidor
+              ? "Defina uma senha para este e-mail. Sem pagamento no servidor, a conta não é criada."
+              : "O cadastro só abre quando o Pix deste e-mail estiver confirmado no servidor. Tela de obrigado ou checkout travado não liberam acesso."}
           </p>
         </div>
 
@@ -145,45 +144,56 @@ export function PostCheckout() {
           <div>
             <SectionKicker>Cadastro</SectionKicker>
             <SectionCard>
-            <input
-              className="field"
-              type="email"
-              inputMode="email"
-              autoComplete="email"
-              placeholder={preview ? "E-mail (opcional)" : "E-mail da compra"}
-              value={email}
-              onChange={(ev) => setEmail(ev.target.value)}
-              required={!preview}
-            />
-            <input
-              className="field"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Senha (mín. 8 caracteres)"
-              value={senha}
-              onChange={(ev) => setSenha(ev.target.value)}
-              required={!preview}
-              minLength={preview ? undefined : 8}
-            />
-            <input
-              className="field"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Confirmar senha"
-              value={confirma}
-              onChange={(ev) => setConfirma(ev.target.value)}
-              required={!preview}
-            />
-            {mensagem ? (
-              <p className={`status ${status === "nao" || status === "error" ? "error" : ""}`}>
-                {mensagem}
-              </p>
-            ) : null}
-          </SectionCard>
+              <input
+                className="field"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder={preview ? "E-mail (opcional)" : "E-mail da compra"}
+                value={email}
+                onChange={(ev) => {
+                  setEmail(ev.target.value)
+                  setPagoNoServidor(preview)
+                }}
+                required={!preview}
+              />
+              {pagoNoServidor ? (
+                <>
+                  <input
+                    className="field"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Senha (mín. 8 caracteres)"
+                    value={senha}
+                    onChange={(ev) => setSenha(ev.target.value)}
+                    required={!preview}
+                    minLength={preview ? undefined : 8}
+                  />
+                  <input
+                    className="field"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Confirmar senha"
+                    value={confirma}
+                    onChange={(ev) => setConfirma(ev.target.value)}
+                    required={!preview}
+                  />
+                </>
+              ) : null}
+              {mensagem ? (
+                <p className={`status ${status === "nao" || status === "error" ? "error" : ""}`}>
+                  {mensagem}
+                </p>
+              ) : null}
+            </SectionCard>
           </div>
           <div className="acesso-actions">
             <Button type="submit" className="cta-principal" disabled={status === "loading"}>
-              {status === "loading" ? "Criando acesso…" : "Criar senha e entrar"}
+              {status === "loading"
+                ? "Conferindo pagamento…"
+                : pagoNoServidor
+                  ? "Criar senha e entrar"
+                  : "Conferir pagamento deste e-mail"}
             </Button>
             <p className="desc">
               Já cadastrou? <Link to="/entrar">Entrar com e-mail e senha</Link>

@@ -1,38 +1,13 @@
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { useNavigate } from "react-router-dom"
 import { Button } from "./Button"
 import { checkoutUrl } from "../lib/acesso"
-import { marcarPixConfirmado } from "../lib/session"
 import { modoPreview } from "../lib/supabase"
-
-function pagamentoAprovadoNaMensagem(data: unknown): boolean {
-  if (!data || typeof data !== "object") return false
-  const texto = JSON.stringify(data).toLowerCase()
-  return (
-    texto.includes("purchase_approved") ||
-    texto.includes("payment_approved") ||
-    texto.includes("pix_pago") ||
-    texto.includes("\"paid\"") ||
-    texto.includes("status\":\"paid") ||
-    texto.includes("pagamento_aprovado")
-  )
-}
-
-function caminhoDoFrame(frame: HTMLIFrameElement): string | null {
-  try {
-    const href = frame.contentWindow?.location.href ?? ""
-    if (href.includes("/pos-compra")) return "/pos-compra?pago=1"
-    return null
-  } catch {
-    return null
-  }
-}
 
 export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
   const navigate = useNavigate()
   const url = useMemo(() => checkoutUrl(), [])
-  const frameRef = useRef<HTMLIFrameElement>(null)
   const preview = modoPreview()
 
   useEffect(() => {
@@ -48,37 +23,7 @@ export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar:
     }
   }, [aberto, onFechar])
 
-  useEffect(() => {
-    if (!aberto) return
-    if (!url && preview) {
-      marcarPixConfirmado()
-      navigate("/pos-compra?pago=1", { replace: true })
-    }
-  }, [aberto, url, preview, navigate])
-
-  useEffect(() => {
-    if (!aberto) return
-    function onMessage(event: MessageEvent) {
-      const origem = event.origin.toLowerCase()
-      if (!origem.includes("cakto.com.br") && origem !== window.location.origin) return
-      if (!pagamentoAprovadoNaMensagem(event.data)) return
-      marcarPixConfirmado()
-      navigate("/pos-compra?pago=1", { replace: true })
-    }
-    window.addEventListener("message", onMessage)
-    return () => window.removeEventListener("message", onMessage)
-  }, [aberto, navigate])
-
   if (!aberto) return null
-
-  function aoCarregar() {
-    const frame = frameRef.current
-    if (!frame) return
-    const path = caminhoDoFrame(frame)
-    if (!path) return
-    marcarPixConfirmado()
-    navigate(path, { replace: true })
-  }
 
   return createPortal(
     <div
@@ -95,19 +40,41 @@ export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar:
             Fechar
           </Button>
         </div>
-        <p className="checkout-hint">Pague o Pix aqui. O cadastro só abre depois da confirmação.</p>
-        {url ? (
-          <iframe
-            ref={frameRef}
-            className="checkout-frame"
-            title="Pagamento Cakto"
-            src={url}
-            allow="payment *; clipboard-write"
-            onLoad={aoCarregar}
-          />
+        <p className="checkout-hint">
+          Pague o Pix. O cadastro só libera quando o pagamento chegar no servidor — um checkout
+          travado ou um link de obrigado não conta.
+        </p>
+        {preview ? (
+          <p className="desc checkout-hint">Modo local sem Supabase: use /pos-compra só em desenvolvimento.</p>
+        ) : url ? (
+          <>
+            <iframe
+              className="checkout-frame"
+              title="Pagamento Cakto"
+              src={url}
+              allow="payment *; clipboard-write"
+            />
+            <p className="checkout-hint">
+              Se a janela não carregar,{" "}
+              <a href={url} target="_blank" rel="noreferrer">
+                abra o Pix numa nova aba
+              </a>
+              . Depois volte e crie a senha em Cadastro, com o e-mail da compra.
+            </p>
+          </>
         ) : (
           <p className="desc checkout-hint">O link de pagamento não está configurado.</p>
         )}
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            onFechar()
+            navigate("/pos-compra")
+          }}
+        >
+          Já paguei — criar senha
+        </Button>
       </div>
     </div>,
     document.body,

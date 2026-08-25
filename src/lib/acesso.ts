@@ -323,7 +323,7 @@ export function checkoutUrl(): string | null {
   try {
     const url = new URL(bruto)
     if (typeof window !== "undefined") {
-      const retorno = `${window.location.origin}/pos-compra?pago=1`
+      const retorno = `${window.location.origin}/pos-compra`
       url.searchParams.set("redirectUrl", retorno)
     }
     return url.toString()

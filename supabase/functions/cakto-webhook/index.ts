@@ -104,18 +104,20 @@ function ehAssinatura(event: string): boolean {
 }
 
 function classificarEvento(event: string): "ativar" | "falha" | "cancelar" | "ignorar" {
+  const e = event.trim().toLowerCase()
+  if (!e) return "ignorar"
+  if (/(^|[._-])unpaid($|[._-])|not[_-]?paid|payment_fail|charge_fail|overdue|atrasad|past_due/.test(e)) {
+    return "falha"
+  }
+  if (/cancel|unsubscrib/.test(e)) return "cancelar"
   if (
-    /purchase_approved|paid|subscription_renewed|subscription\.renewed|subscription_created|subscription\.created|subscription_activated|recurring.*approv|renov/.test(
-      event,
+    e === "paid" ||
+    /(^|[._-])paid$/.test(e) ||
+    /purchase_approved|payment_approved|pix_pago|subscription_renewed|subscription\.renewed|subscription_created|subscription\.created|subscription_activated|recurring.*approv|renov/.test(
+      e,
     )
   ) {
     return "ativar"
-  }
-  if (/charge_fail|payment_fail|overdue|atrasad|past_due|unpaid/.test(event)) {
-    return "falha"
-  }
-  if (/cancel|unsubscrib/.test(event)) {
-    return "cancelar"
   }
   return "ignorar"
 }
