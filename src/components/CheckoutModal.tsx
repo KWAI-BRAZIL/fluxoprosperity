@@ -1,10 +1,10 @@
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { createPortal } from "react-dom"
 import { Button } from "./Button"
 import { checkoutUrl } from "../lib/acesso"
 
 export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar: () => void }) {
-  const url = checkoutUrl()
+  const url = useMemo(() => checkoutUrl(), [])
 
   useEffect(() => {
     if (!aberto) return
@@ -13,14 +13,11 @@ export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar:
       if (e.key === "Escape") onFechar()
     }
     window.addEventListener("keydown", onKey)
-    if (url) {
-      window.location.assign(url)
-    }
     return () => {
       document.body.style.overflow = ""
       window.removeEventListener("keydown", onKey)
     }
-  }, [aberto, onFechar, url])
+  }, [aberto, onFechar])
 
   if (!aberto) return null
 
@@ -39,8 +36,15 @@ export function CheckoutModal({ aberto, onFechar }: { aberto: boolean; onFechar:
             Fechar
           </Button>
         </div>
+        <p className="checkout-hint">Pague o Pix aqui. O cadastro só abre depois que o pagamento chegar no servidor.</p>
         {url ? (
-          <p className="checkout-hint">Abrindo o checkout da Cakto…</p>
+          <iframe
+            className="checkout-frame"
+            title="Pagamento Cakto"
+            src={url}
+            allow="payment *; clipboard-write"
+            referrerPolicy="strict-origin-when-cross-origin"
+          />
         ) : (
           <p className="desc checkout-hint">O link de pagamento não está configurado.</p>
         )}
