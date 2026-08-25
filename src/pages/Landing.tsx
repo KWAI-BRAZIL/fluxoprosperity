@@ -5,6 +5,7 @@ import { Button, ButtonLink } from "../components/Button"
 import { CheckoutModal } from "../components/CheckoutModal"
 import { Shell } from "../components/Shell"
 import { SectionCard, SectionKicker } from "../components/Ui"
+import { checkoutUrl } from "../lib/acesso"
 
 const FEATURES = [
   { icon: "✦", title: "Número de destino, mapa do nome e ano pessoal" },
@@ -17,6 +18,11 @@ export function Landing() {
   const [aberto, setAberto] = useState(() => params.get("checkout") === "1")
 
   function abrirCheckout() {
+    const url = checkoutUrl()
+    if (url) {
+      window.location.assign(url)
+      return
+    }
     setAberto(true)
     setParams({ checkout: "1" }, { replace: true })
   }

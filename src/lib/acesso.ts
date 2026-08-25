@@ -14,6 +14,7 @@ import {
   type EntradaLocal,
   type PerfilLocal,
 } from "./session"
+import { CAKTO_CHECKOUT_URL } from "./env-publico"
 import { getSupabase, modoPreview } from "./supabase"
 
 export type { CartaVivida }
@@ -318,13 +319,12 @@ export function jaFezRitual(perfil: Perfil | null): boolean {
 }
 
 export function checkoutUrl(): string | null {
-  const bruto = import.meta.env.VITE_CAKTO_CHECKOUT_URL
+  const bruto = CAKTO_CHECKOUT_URL
   if (!bruto) return null
   try {
     const url = new URL(bruto)
     if (typeof window !== "undefined") {
-      const retorno = `${window.location.origin}/pos-compra`
-      url.searchParams.set("redirectUrl", retorno)
+      url.searchParams.set("redirectUrl", `${window.location.origin}/pos-compra`)
     }
     return url.toString()
   } catch {
