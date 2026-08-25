@@ -1,11 +1,7 @@
 import { useEffect, useState } from "react"
 import { createPortal } from "react-dom"
+import { esperarPrompt, pedirInstalacaoNativa } from "../lib/pwa-install"
 import { appJaInstalado, plataformaPwa } from "../lib/pwa"
-
-type BeforeInstallPromptEvent = Event & {
-  prompt: () => Promise<void>
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>
-}
 
 function safariNoIos(): boolean {
   const ua = navigator.userAgent || ""
@@ -15,19 +11,14 @@ function safariNoIos(): boolean {
 export function InstalarApp() {
   const [aberto, setAberto] = useState(false)
   const [guia, setGuia] = useState(false)
-  const [promptEvento, setPromptEvento] = useState<BeforeInstallPromptEvent | null>(null)
   const [instalando, setInstalando] = useState(false)
+  const [avisoAndroid, setAvisoAndroid] = useState(false)
   const plataforma = typeof navigator === "undefined" ? "outro" : plataformaPwa()
+  const iphone = plataforma === "ios"
 
   useEffect(() => {
     if (appJaInstalado()) return
     setAberto(true)
-    const onPrompt = (event: Event) => {
-      event.preventDefault()
-      setPromptEvento(event as BeforeInstallPromptEvent)
-    }
-    window.addEventListener("beforeinstallprompt", onPrompt)
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt)
   }, [])
 
   if (!aberto || appJaInstalado() || typeof document === "undefined") return null
@@ -37,27 +28,32 @@ export function InstalarApp() {
     setGuia(false)
   }
 
-  async function instalar() {
-    if (!promptEvento) {
+  async function noCta() {
+    if (iphone) {
       setGuia(true)
       return
     }
     setInstalando(true)
+    setAvisoAndroid(false)
     try {
-      await promptEvento.prompt()
-      const escolha = await promptEvento.userChoice
-      if (escolha.outcome === "accepted") fechar()
+      await esperarPrompt(2500)
+      let resultado = await pedirInstalacaoNativa()
+      if (resultado === "unavailable") {
+        await esperarPrompt(1500)
+        resultado = await pedirInstalacaoNativa()
+      }
+      if (resultado === "accepted") fechar()
+      if (resultado === "unavailable") setAvisoAndroid(true)
     } finally {
       setInstalando(false)
     }
   }
 
-  const podeBaixar = Boolean(promptEvento)
-  const dica = podeBaixar
-    ? "Atalho na tela inicial, sem loja"
-    : plataforma === "ios"
-      ? "Safari → Compartilhar → Tela de Início"
-      : "Menu do navegador → Instalar app"
+  const dica = iphone
+    ? "Safari → Compartilhar → Tela de Início"
+    : avisoAndroid
+      ? "Abra no Chrome e toque em Instalar de novo"
+      : "Salva na tela inicial, sem loja"
 
   const passosIos = safariNoIos()
     ? [
@@ -70,20 +66,6 @@ export function InstalarApp() {
         "Toque em Compartilhar (quadrado com a seta para cima).",
         "Toque em Adicionar à Tela de Início e depois em Adicionar.",
       ]
-
-  const passosAndroid = [
-    "Toque no menu ⋮ no canto do Chrome.",
-    "Toque em Instalar app ou Adicionar à tela inicial.",
-    "Confirme. O ícone aparece junto aos outros apps.",
-  ]
-
-  const passosOutro = [
-    "No Chrome ou Edge, abra o menu do navegador.",
-    "Toque em Instalar Fluxo da Prosperidade (ou Instalar app).",
-    "Confirme. O app abre em janela própria, sem a barra do site.",
-  ]
-
-  const passos = plataforma === "ios" ? passosIos : plataforma === "android" ? passosAndroid : passosOutro
 
   return createPortal(
     <div className="pwa-layer" style={{ zIndex: 4000, pointerEvents: "auto" }}>
@@ -100,20 +82,15 @@ export function InstalarApp() {
           </p>
           <p className="pwa-dica">{dica}</p>
         </div>
-        <button
-          type="button"
-          className="pwa-cta"
-          onClick={() => void instalar()}
-          disabled={instalando}
-        >
-          {instalando ? "…" : podeBaixar ? "Instalar" : "Como instalar"}
+        <button type="button" className="pwa-cta" onClick={() => void noCta()} disabled={instalando}>
+          {instalando ? "…" : iphone ? "Como instalar" : "Instalar"}
         </button>
         <button type="button" className="pwa-fechar" onClick={fechar} aria-label="Fechar">
           ×
         </button>
-        {guia ? (
+        {iphone && guia ? (
           <ol className="pwa-passos">
-            {passos.map((passo) => (
+            {passosIos.map((passo) => (
               <li key={passo}>{passo}</li>
             ))}
           </ol>
